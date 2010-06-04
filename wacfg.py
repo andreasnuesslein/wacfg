@@ -3,12 +3,14 @@
 import sys, os, subprocess
 
 
+_basedir = os.path.relpath("apps/")
+
+
 def help():
     print("help text..")
 
 
 def get_apps():
-    _basedir = os.path.relpath("apps/")
     app_basedir = os.path.join(os.path.curdir,_basedir)
 
     appdirs = [app for app in os.listdir(app_basedir) if
@@ -18,22 +20,25 @@ def get_apps():
     #return ["wordpress-2.9.2/"]
 
 
-def exec_apps(applist=get_apps()):
+def install_apps(applist=get_apps()):
+
+    args = ["/usr/bin/env", "python3", "wacfg.py"]
+
     for app in applist:
-        args = ["/usr/bin/env", "python3", "wacfg.py"]
-        subprocess.call(args,env={'PYTHONPATH':"/home/nutz/work/wacfg2/module/"},cwd="apps/%s/" %app)
+        wd = os.path.join(_basedir,app)
+        if os.path.isfile(os.path.join(wd,"wacfg.py")):
+            subprocess.call(args, cwd=os.path.join(_basedir,app),
+                env={'PYTHONPATH':"/home/nutz/work/wacfg2/module/"})
+        else:
+            print("no wacfg.py found in %s" % wd)
 
-
-
-
-def manifiles():
-    exec_apps()
 
 
 
 def main():
     print("MAIN")
-    manifiles()
+    print(get_apps())
+    install_apps()
 
 
 if __name__ == "__main__":

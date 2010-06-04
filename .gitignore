@@ -1,2 +1,6 @@
 *.pyc
+
 *.tar.gz
+*.tar
+*.tar.bz2
+*.zip
