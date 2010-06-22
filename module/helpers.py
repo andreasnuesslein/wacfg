@@ -10,9 +10,9 @@ def _get_gid(groupname):
 
 
 def _find_src(src):
-    certain = False
     sources = None
-    src = os.path.relpath(src)
+    if not src:
+        src = os.path.relpath(src)
 
     src_path = None
     tries = [src, src+".tar", src+".gz", src+".bz2", src+".tar.gz", src+".tar.bz2"]
@@ -21,26 +21,11 @@ def _find_src(src):
     for i in tries:
         if os.path.isfile(i):
             src_path = i
-            certain = True
             break
 
     ## XXX currently trying to find the file.. is this smart?
     if not src_path:
-        count = 0
-        for i in os.listdir("."):
-            if "zip" in i or ".tar" in i:
-                count = count + 1
-                src_path = i
-        if count > 1:
-            raise Exception("More than one possible archive found.")
+        raise Exception("No archive found")
 
-
-    if zipfile.is_zipfile(src_path):
-        sources = zipfile.ZipFile(i)
-    elif tarfile.is_tarfile(src_path):
-        sources = tarfile.open(i)
-    else:
-        raise Exception("Not a valid archive")
-
-    return sources
+    return src_path
 
