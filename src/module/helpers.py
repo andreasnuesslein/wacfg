@@ -23,9 +23,35 @@ def _find_src(src):
             src_path = i
             break
 
-    ## XXX currently trying to find the file.. is this smart?
     if not src_path:
         raise Exception("No archive found")
 
     return src_path
+
+def _find_distro():
+    distros = [
+            ('gentoo', '/etc/gentoo-release'),
+            ('debian', '/etc/debian_version'),
+            ]
+    for (distro, file) in distros:
+        if os.path.isfile(file):
+            return distro
+    raise Exception("distribution unknown")
+
+def _find_server():
+    (distro, path) = _find_distro()
+    if distro == 'gentoo':
+        path = '/var/db/pkg/www-servers/'
+        dirs = os.listdir(path)
+        if len(dirs) != 1:
+            pass
+        pass
+    pass
+
+
+
+#def vprint(str, level = 1):
+#    if VERBOSITY >= level:
+#        print(str)
+
 

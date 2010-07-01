@@ -5,7 +5,7 @@ import sys, os, subprocess
 from vercmp import vercmp
 from helpers import *
 
-_basedir = os.path.relpath("./apps/")
+_basedir = os.path.relpath("../apps/")
 
 
 class Application:
@@ -37,8 +37,8 @@ class Application:
     def install(self):
         if self.valid_exec():
             args = ["/usr/bin/env", "python3", "wacfg.py"]
-            wd = "apps/%s/%s" % (self.name, self.version)
-            subprocess.call(args, env={'PYTHONPATH':"/home/nutz/work/wacfg2/module/"}, cwd=wd)
+            wd = "%s/%s/%s" % (_basedir, self.name, self.version)
+            subprocess.call(args, env={'PYTHONPATH':"/home/nutz/work/wacfg2/src/module/"}, cwd=wd)
         else:
             print("no wacfg.py found in %s" % wd)
 
@@ -119,7 +119,7 @@ def main():
 
     # Evaluate Options
     if Env.options.install:
-        if len(Env.args) <= 2:
+        if len(Env.args) < 2:
             return "Please specify a correct package and version"
         Application(Env.args[0], Env.args[1]).install()
 
