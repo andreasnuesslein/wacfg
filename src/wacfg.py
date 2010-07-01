@@ -116,13 +116,17 @@ def main():
     print(Env.options)
     print(Env.args)
 
+
+    # Evaluate Options
     if Env.options.install:
-        #if len(Env.args) == 1:
-        #    Env.args[0].split("-",1)
+        if len(Env.args) <= 2:
+            return "Please specify a correct package and version"
         Application(Env.args[0], Env.args[1]).install()
 
     if Env.options.list:
-        ApplicationList().list()
+        if len(Env.args) == 0:
+            Env.args += [None]
+        ApplicationList(Env.args[0]).list()
 
 
 if __name__ == "__main__":
