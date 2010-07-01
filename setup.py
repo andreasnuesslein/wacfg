@@ -8,7 +8,7 @@ setup(
     author = 'Andreas Nüßlein',
     author_email = 'nutz@noova.de',
     url = 'http://notyetset.com',
-    license = "BSD",
+    license = "CDDL",
     packages = find_packages(),
     include_package_data = True,
     zip_safe = False,
