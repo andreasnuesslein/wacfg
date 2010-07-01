@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from setuptools import setup, find_packages
 
 setup(
     name = "wacfg",
-    version = __import__('wacfg').__version__(),
+    version = __import__('src').__version__(),
     description = 'Webapp-config reloaded',
     author = 'Andreas Nüßlein',
     author_email = 'nutz@noova.de',
