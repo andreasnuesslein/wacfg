@@ -1,5 +1,7 @@
 *.pyc
 
+.*.swp
+
 *.tar.gz
 *.tar
 *.tar.bz2
