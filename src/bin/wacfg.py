@@ -4,8 +4,11 @@ import sys, os, subprocess
 
 from vercmp import vercmp
 from helpers import *
+from config import Config
 
-_basedir = os.path.relpath("../apps/")
+
+class Env:
+    pass
 
 
 class Application:
@@ -31,28 +34,28 @@ class Application:
         return vercmp(self.version, v)
 
     def valid_exec(self):
-        path = os.path.join(_basedir, self.name, self.version, "wacfg.py")
+        path = os.path.join(Config._basedir, self.name, self.version, "wacfg.py")
         return(os.path.isfile(path))
 
     def install(self):
         if self.valid_exec():
             args = ["/usr/bin/env", "python3", "wacfg.py"]
-            wd = "%s/%s/%s" % (_basedir, self.name, self.version)
-            subprocess.call(args, env={'PYTHONPATH':"/home/nutz/work/wacfg/src/module/"}, cwd=wd)
+            wd = "%s/%s/%s" % (Config._basedir, self.name, self.version)
+            subprocess.call(args, env={'PYTHONPATH':"/home/nutz/work/wacfg/src/"}, cwd=wd)
         else:
-            print("no wacfg.py found in %s" % wd)
+            print("no wacfg.py found")
 
 
 class ApplicationList:
     def __init__(self, app=None):
         if not app:
-            apps = [app for app in sorted(os.listdir(_basedir)) if
-                os.path.isdir(os.path.join(_basedir, app)) ]
+            apps = [app for app in sorted(os.listdir(Config._basedir)) if
+                os.path.isdir(os.path.join(Config._basedir, app)) ]
         else:
             apps = [app]
 
-        self.apps = [Application(app, v) for app in apps for v in os.listdir(os.path.join(_basedir, app))
-                if os.path.isdir(os.path.join(_basedir, app, v))]
+        self.apps = [Application(app, v) for app in apps for v in os.listdir(os.path.join(Config._basedir, app))
+                if os.path.isdir(os.path.join(Config._basedir, app, v))]
 
     def dict(self):
         appdict = {}
@@ -79,9 +82,6 @@ class ApplicationList:
         print("")
         return()
 
-
-class Env:
-    pass
 
 
 def main():
