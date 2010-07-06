@@ -38,7 +38,7 @@ class Application:
         if self.valid_exec():
             args = ["/usr/bin/env", "python3", "wacfg.py"]
             wd = "%s/%s/%s" % (_basedir, self.name, self.version)
-            subprocess.call(args, env={'PYTHONPATH':"/home/nutz/work/wacfg2/src/module/"}, cwd=wd)
+            subprocess.call(args, env={'PYTHONPATH':"/home/nutz/work/wacfg/src/module/"}, cwd=wd)
         else:
             print("no wacfg.py found in %s" % wd)
 

@@ -5,7 +5,7 @@ setup(
     name = "wacfg",
     version = __import__('src').__version__(),
     description = 'Webapp-config reloaded',
-    author = u'Andreas Nüßlein',
+    author = 'Andreas Nuesslein',
     author_email = 'nutz@noova.de',
     url = 'http://git.noova.de/wacfg',
     license = "CDDL",
