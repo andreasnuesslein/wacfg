@@ -14,14 +14,14 @@ class Config:
 
 
     # user-changeable
-    etcconfig = "/home/nutz/wacfg/etc/wacfg/wacfg.conf"
+    etcconfig = "/home/nutz/work/wacfg/etc/wacfg/wacfg.conf"
 
 
     def __init__(self):
         section = 'general'
         config = configparser.RawConfigParser()
         config.read(self.etcconfig)
-        self.wwwroot = config.get('general','wwwroot')
+        self.wwwroot = config.get(section,'wwwroot')
 
 
 

@@ -38,8 +38,16 @@ class tools:
         Env.sboxpath = os.path.join(Config._sandboxdir, Env.pkgname)
 
 
-    def archive_install():
-        pass
+    def archive_install(hostname="localhost"):
+        path = os.path.join(Config().wwwroot, hostname, "htdocs")
+        try:
+            os.makedirs(path)
+        except:
+            pass
+
+        tools.mv(Env.sboxpath, path)
+        Env.instpath = os.path.join(path,os.path.basename(Env.sboxpath))
+        print(Env.instpath)
 
 
     def mv(frompath, topath, wd="."):
@@ -98,6 +106,7 @@ class WaCfg:
 
     def _post_install(self):
         pass
+
 
 def main(Handler=WaCfg, source=None):
     Env.src = source
