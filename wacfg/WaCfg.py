@@ -17,8 +17,7 @@ class tools:
         else:
             raise Exception("Not a valid archive")
 
-        pkgname = "%s-%s" % (os.path.split(os.path.split(os.getcwd())[0])[1],
-                os.path.split(os.getcwd())[1])
+        pkgname = "%s" % (os.path.split(os.path.split(os.getcwd())[0])[1])
         path = os.path.join(Config._sandboxdir, pkgname)
         source.extractall(path = path)
         dir = os.listdir(path)
@@ -52,6 +51,8 @@ class tools:
 
     def mv(frompath, topath, wd="."):
         args = ["/bin/mv", frompath, topath]
+        #if Config.verbosity:
+        #    args += ["-v"]
         subprocess.call(args, cwd=wd)
 
     def chmod(mode, path="", recursive=False):
@@ -84,10 +85,6 @@ class tools:
 
 
 class Env:
-    src = ""
-    pkgname = ""
-    sboxpath = ""
-    instpath = ""
     pass
 
 class WaCfg:

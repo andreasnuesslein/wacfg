@@ -41,7 +41,7 @@ class Application:
         if self.valid_exec():
             args = ["/usr/bin/env", "python3", "wacfg.py"]
             wd = "%s/%s/%s" % (Config._basedir, self.name, self.version)
-            subprocess.call(args, env={'PYTHONPATH':"/home/nutz/work/wacfg/src/"}, cwd=wd)
+            subprocess.call(args, env={'PYTHONPATH':"/home/nutz/work/wacfg/wacfg/"}, cwd=wd)
         else:
             print("no wacfg.py found")
 
@@ -115,6 +115,8 @@ def main():
     (Env.options, Env.args) = parser.parse_args()
     print(Env.options)
     print(Env.args)
+
+    Config.verbosity = Env.options.verbose
 
     # Evaluate Options
     if Env.options.install:
