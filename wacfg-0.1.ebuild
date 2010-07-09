@@ -13,10 +13,11 @@ SRC_URI="git://git.noova.de/wacfg.git"
 LICENSE="CDDL"
 SLOT="0"
 KEYWORDS="~amd64 ~x86" 
-IUSE=""
+IUSE="+color"
 
 DEPEND=""
-RDEPEND="${DEPEND}"
+RDEPEND="${DEPEND}
+	color? ( dev-python/colorama )"
 
 
 src_unpack() {

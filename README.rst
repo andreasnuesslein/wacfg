@@ -16,3 +16,20 @@ Using wacfg is as simple as putting a wacfg.py next to your .tar.gz,
     - post_install()
 
 
+    Tools:
+
+    - archive_unpack()
+    - archive_install()
+    - mv(frompath, topath, wd=".")
+    - chmod(mode, path="", recursive=False)
+    - chown(owner, group=None, path="", recursive=False)
+    - server_own(path="", recursive=False)
+
+
+    Possible variables in source-string:
+
+    - %(PN)s = package name
+    - %(PV)s = package version
+    - %(P)s  = "%(PN)s-%(PV)s"
+
+
