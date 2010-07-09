@@ -63,6 +63,19 @@ class tools:
         args += [mode, path]
         return (subprocess.call(args))
 
+    def archive_install():
+        csvfile = '.wacfg-%s-%s' % (Env.pn, Env.pv)
+        if os.path.isdir(Env.destpath):
+            if os.path.isfile(os.path.join(Env.destpath, csvfile)):
+                return tools.archive_update()
+            else:
+                print("Either you installed this manually before or some \
+                        goofball erased the .wacfg-files.\nEither way, I'm exiting")
+                sys.exit(1)
+        else:
+            # Create a ContentCSV for sandboxdir
+            Env.sboxcontent = Content(Env.sboxpath)
+            Env.sboxcontent.writeCSV(os.path.join(Env.sboxpath, csvfile))
 
     def chown(owner, group=None, path="", recursive=False):
         path = os.path.join(Env.sboxpath, path)
@@ -90,8 +103,6 @@ class Env:
 class WaCfg:
 
     def _src_unpack(self):
-        if not Env.src:
-            Env.src = os.path.basename(os.path.abspath(os.path.curdir))
         tools.archive_unpack()
 
     def _src_config(self):
