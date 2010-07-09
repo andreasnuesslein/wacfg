@@ -59,3 +59,18 @@ def uniq(seq):
     seen = set()
     return [x for x in seq if x not in seen and not seen.add(x)]
 
+
+def file_md5(path):
+    import hashlib
+    md5 = hashlib.md5()
+    with open(path) as file:
+        while True:
+            data = file.read(8192)
+            if not data:
+                break
+            md5.update(data)
+    return md5.hexdigest()
+
+
+
+
