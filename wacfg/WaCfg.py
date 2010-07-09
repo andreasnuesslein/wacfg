@@ -113,6 +113,15 @@ class tools:
         suser = 'apache'
         return tools.chown(path, suser, suser, recursive)
 
+    def wget(path):
+        output = path.split("/")[-1]
+        args = ["/usr/bin/wget", "--continue"]
+        args += ["--output-document=%s" % output]
+        args += [path]
+        subprocess.call(args)
+        return output
+
+
 
 
 
