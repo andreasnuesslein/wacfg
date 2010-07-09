@@ -8,9 +8,10 @@ except:
 class Config:
     
     # not user-changeable
-    _basedir = os.path.relpath("/home/nutz/work/wacfg/apps/")
-    _sandboxdir = "/home/nutz/work/tmp/wacfg/sandbox/"
-    _wwwdir = "/home/nutz/work/tmp/wacfg/installed/"
+    _appdir = "/home/nutz/work/wacfg/apps/"
+    _sandboxroot = "/home/nutz/work/wacfg/tmp/sandbox/"
+    #_wwwroot = "/home/nutz/work/wacfg/tmp/installed/"
+    #_dbroot = "/home/nutz/work/wacfg/tmp/vardbwacfg/"
 
 
     # user-changeable

@@ -34,13 +34,13 @@ class Application:
         return vercmp(self.version, v)
 
     def valid_exec(self):
-        path = os.path.join(Config._basedir, self.name, self.version, "wacfg.py")
+        path = os.path.join(Config._appdir, self.name, self.version, "wacfg.py")
         return(os.path.isfile(path))
 
     def install(self):
         if self.valid_exec():
             args = ["/usr/bin/env", "python3", "wacfg.py"]
-            wd = "%s/%s/%s" % (Config._basedir, self.name, self.version)
+            wd = "%s/%s/%s" % (Config._appdir, self.name, self.version)
             subprocess.call(args, env={'PYTHONPATH':"/home/nutz/work/wacfg/wacfg/"}, cwd=wd)
         else:
             print("no wacfg.py found")
@@ -49,13 +49,13 @@ class Application:
 class ApplicationList:
     def __init__(self, app=None):
         if not app:
-            apps = [app for app in sorted(os.listdir(Config._basedir)) if
-                os.path.isdir(os.path.join(Config._basedir, app)) ]
+            apps = [app for app in sorted(os.listdir(Config._appdir)) if
+                os.path.isdir(os.path.join(Config._appdir, app)) ]
         else:
             apps = [app]
 
-        self.apps = [Application(app, v) for app in apps for v in os.listdir(os.path.join(Config._basedir, app))
-                if os.path.isdir(os.path.join(Config._basedir, app, v))]
+        self.apps = [Application(app, v) for app in apps for v in os.listdir(os.path.join(Config._appdir, app))
+                if os.path.isdir(os.path.join(Config._appdir, app, v))]
 
     def dict(self):
         appdict = {}

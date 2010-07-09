@@ -1,32 +1,16 @@
 import os, sys
 import tarfile, zipfile
 
+
+def OUT(str, verbosity=1):
+    print(str)
+
 def _get_uid(username):
     from pwd import getpwnam
     return getpwnam(username)[2]
 def _get_gid(groupname):
     from grp import getgrnam
     return getgrnam(groupname)[2]
-
-
-def _find_src(src):
-    sources = None
-    if not src:
-        src = os.path.relpath(src)
-
-    src_path = None
-    tries = [src, src+".tar", src+".gz", src+".bz2", src+".tar.gz", src+".tar.bz2"]
-    tries += [src+".zip"]
-
-    for i in tries:
-        if os.path.isfile(i):
-            src_path = i
-            break
-
-    if not src_path:
-        raise Exception("No archive found")
-
-    return src_path
 
 def _find_distro():
     distros = [
@@ -58,19 +42,4 @@ def _find_server():
 def uniq(seq):
     seen = set()
     return [x for x in seq if x not in seen and not seen.add(x)]
-
-
-def file_md5(path):
-    import hashlib
-    md5 = hashlib.md5()
-    with open(path) as file:
-        while True:
-            data = file.read(8192)
-            if not data:
-                break
-            md5.update(data)
-    return md5.hexdigest()
-
-
-
 
