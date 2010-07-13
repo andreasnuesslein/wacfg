@@ -8,19 +8,20 @@ from helpers import OUT
 
 class tools:
 
+    @staticmethod
     def archive_unpack():
 
         if Env.src and os.path.isfile(Env.src):
-            print("src set correctly to: %s" % Env.src)
+            OUT("src set correctly to: %s" % Env.src)
             srcfile = Env.src
         else:
-            print("guessing name")
+            OUT("guessing name")
             names = [Env.pn, Env.pn+"-"+Env.pv, "latest"]
             suffixes = ["", ".tar", ".gz", ".bz2", ".tar.gz", ".tgz", ".tar.bz2", ".zip"]
             try:
                 srcfile = [name+suffix for name in names for suffix in suffixes if os.path.isfile(name+suffix)][0]
             except IndexError:
-                print("No archive found")
+                OUT("No archive found")
                 sys.exit(1)
 
         if zipfile.is_zipfile(srcfile):
@@ -47,46 +48,98 @@ class tools:
         return
 
 
-    def wacfg_global_info_install():
-        print("write information to global db, e.g. /var/db/wacfg")
-        path = Env.cfg._dbdir
-        # ... XXX
+#    def wacfg_global_info_install():
+#        OUT("write information to global db, e.g. /var/db/wacfg")
+#        path = Env.cfg._dbdir
+#        # ... XXX
 
 
-    def archive_update():
-        print("update archive")
-        # ... XXX
 
 
+    @staticmethod
     def archive_install():
-        csvfile = '.wacfg-%s-%s' % (Env.pn, Env.pv)
+        sboxpath_s = os.path.join(Env.sboxpath, '%s')
+        destpath_s = os.path.join(Env.destpath, '%s')
+        infofile = '.wacfg'
+        contentfile = '.wacfg-%s-%s'
+
+        manuallychanged = None
+
         if os.path.isdir(Env.destpath):
-            if os.path.isfile(os.path.join(Env.destpath, csvfile)):
-                return tools.archive_update()
+            if os.path.isfile(destpath_s % infofile):
+                ex_content = Content(Env.destpath)
+                metacsv = ex_content.readMetaCSV()
+                manuallychanged = ex_content.checkCSV(
+                        destpath_s % contentfile %
+                        (metacsv['pn'], metacsv['pv'])
+                        )
+
+                OUT(manuallychanged)
+
+                #act_content = Content(Env.)
+
+                # update process
+                # ex_info = Content().readMetaCSV(infofile)
+                # ex_info[
+
+
             else:
-                print("Either you installed this manually before or some \
+                # XXX Folder exists, but no .wacfg-files...
+                OUT("Either you installed this manually before or some \
                         goofball erased the .wacfg-files.\nEither way, I'm exiting")
                 sys.exit(1)
-        else:
-            # Create a ContentCSV for sandboxdir
-            Env.sboxcontent = Content(Env.sboxpath)
-            Env.sboxcontent.writeCSV(os.path.join(Env.sboxpath, csvfile))
 
-            try:
-                os.makedirs(os.path.dirname(Env.destpath))
-            except:
-                pass
-            tools.mv(Env.sboxpath, os.path.dirname(Env.destpath))
+        # Create a ContentCSV for sandboxdir
+        Env.sboxcontent = Content(Env.sboxpath)
+        Env.sboxcontent.writeCSV(sboxpath_s % contentfile % (Env.pn, Env.pv))
+        Env.sboxcontent.writeMetaCSV(Env)
 
-            return
+        # mv files that have been changed manually.
+        if manuallychanged:
+            for entry in manuallychanged:
+                relpth = os.path.relpath(entry.path)
+                ep = sboxpath_s % relpth
+                epn = sboxpath_s % "._cfg%s_%s" % ("%04d", relpth)
+                i = 0
+                while True:
+                    epntmp = epn % i
+                    if not os.path.isfile(epntmp):
+                        epn = epntmp
+                        break
+                    i+=1
+                tools.mv(ep, epn)
 
 
+        # do the actual "installation" / move
+        try:
+            os.makedirs(os.path.split(Env.destpath)[0])
+        except:
+            pass
+        tools.rsync(Env.sboxpath, Env.destpath)
+        return
+
+
+    @staticmethod
     def mv(frompath, topath, wd="."):
         args = ["/bin/mv", frompath, topath]
         #if Config.verbosity:
         #    args += ["-v"]
         return subprocess.call(args, cwd=wd)
 
+    @staticmethod
+    def rsync(frompath, topath, wd="."):
+        if not "/" == frompath[-1:]:
+            frompath += "/"
+        if not "/" == topath[-1:]:
+            topath += "/"
+        args = ["/usr/bin/rsync", "-a", frompath, topath]
+        #if Config.verbosity:
+        #    args += ["-v"]
+        return subprocess.call(args, cwd=wd)
+
+
+
+    @staticmethod
     def chmod(mode, path="", recursive=False):
         path = os.path.join(Env.sboxpath, path)
         args = ["/bin/chmod"]
@@ -96,6 +149,7 @@ class tools:
         return subprocess.call(args)
 
 
+    @staticmethod
     def chown(owner, group=None, path="", recursive=False):
         path = os.path.join(Env.sboxpath, path)
         args = ["/bin/chown"]
@@ -109,10 +163,12 @@ class tools:
         return subprocess.call(args)
 
 
+    @staticmethod
     def server_own(path="", recursive=False):
         suser = 'apache'
         return tools.chown(path, suser, suser, recursive)
 
+    @staticmethod
     def wget(path):
         output = path.split("/")[-1]
         args = ["/usr/bin/wget", "--continue"]
@@ -144,7 +200,7 @@ class WaCfg:
         pass
 
 
-def main(Handler=WaCfg, source=None, vhost="localhost"):
+def main(Handler=WaCfg, source=None, vhost="localhost", installdir=None):
 
     # --------------------------------------
     # Setting the environment
@@ -154,8 +210,9 @@ def main(Handler=WaCfg, source=None, vhost="localhost"):
 
     Env.pn = os.path.basename(os.path.dirname(os.getcwd()))
     Env.pv = os.path.basename(os.getcwd())
+    Env.installdir = installdir or Env.pn
     Env.sboxpath = os.path.join(Env.cfg._sandboxroot, Env.pn)
-    Env.destpath = os.path.join(Env.cfg.wwwroot, vhost, "htdocs", Env.pn)
+    Env.destpath = os.path.join(Env.cfg.wwwroot, vhost, "htdocs", Env.installdir)
 
     Env.src = source
     if Env.src:

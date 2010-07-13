@@ -121,6 +121,7 @@ def main():
     # Evaluate Options
     if Env.options.install:
         if len(Env.args) < 2:
+            # XXX maybe just use the latest version here...
             return "Please specify a correct package and version"
         Application(Env.args[0], Env.args[1]).install()
 

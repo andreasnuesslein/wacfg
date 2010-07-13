@@ -1,23 +1,30 @@
 import os, hashlib, csv
+from time import strftime
+
+try:
+    import ConfigParser as configparser
+except:
+    import configparser
+
+
 
 class Content:
-    def __init__(self, path=None):
-        self.entries = []
-        if path:
-            olddir = os.getcwd()
-            os.chdir(path)
-            self.addpath()
-            os.chdir(olddir)
+    def __init__(self, path):
+        self.path = path
+        self.entries = set()
 
-        else:
-            pass
+        olddir = os.getcwd()
+        os.chdir(path)
+        self.createEntries()
+        os.chdir(olddir)
 
-    def addpath(self, path='.'):
+    def createEntries(self, path='.'):
             for entry in os.listdir(path):
                 x = os.path.join(path, entry)
                 if os.path.isdir(x):
-                    self.addpath(x)
-                self.entries += [Entry(path=x)]
+                    self.createEntries(x)
+                if not "./.wacfg" in x:
+                    self.entries.add(Entry(path=x))
 
 
     def writeCSV(self, path):
@@ -27,16 +34,60 @@ class Content:
             w.writerow(entry.toArray())
         f.close()
 
-    def readCSV(self, path):
-        f = open(path)
+    def checkCSV(self, path):
+        newentries = set()
+        f = open(path, 'r')
         w = csv.reader(f, delimiter=' ', quotechar='"')
         for entry in w:
-            print(entry)
-            self.entries += [Entry(array=entry)]
+            newentries.add(Entry(array=entry))
         f.close()
+
+        if len(self.entries) == 0:
+            self.entries = newentries
+            return
+        else:
+            diff = self.entries - newentries
+            #import ipdb; ipdb.set_trace()
+            self.entries = newentries
+            return diff
+
+        #self.compare(newentries)
+
+
+    #def compare(newentries):
+
+
 
     def toList(self):
         return sorted(self.entries, key=lambda x: x.path)
+
+    def writeMetaCSV(self, Env, path=None):
+        if not path:
+            path = os.path.join(self.path, '.wacfg')
+
+        section = 'general'
+        config = configparser.RawConfigParser()
+        config.add_section(section)
+        config.set(section, 'PN', Env.pn)
+        config.set(section, 'PV', Env.pv)
+        config.set(section, 'INSTALLDATE', strftime('%Y-%m-%d %H:%M:%S'))
+        config.set(section, 'INSTALLDIR', Env.installdir)
+        config.set(section, 'HOSTNAME', Env.vhost)
+        with open(path, 'w') as file:
+            config.write(file)
+
+    def readMetaCSV(self, path=None):
+        if not path:
+                path = os.path.join(self.path, '.wacfg')
+        section = 'general'
+        config = configparser.RawConfigParser()
+        config.read(path)
+        ret = {}
+        ret['pn'] = config.get(section, 'PN')
+        ret['pv'] = config.get(section, 'PV')
+        ret['vhost'] = config.get(section, 'HOSTNAME')
+        ret['installdir'] = config.get(section, 'INSTALLDIR')
+        return ret
 
 
 class Entry:
@@ -64,7 +115,7 @@ class Entry:
             self.md5 = self.file_md5(path)
         elif os.path.isdir(path):
             self.type = 'dir'
-            self.md5 = 0
+            self.md5 = '0'
         else:
             raise Exception("unknown filetype")
 
@@ -83,6 +134,26 @@ class Entry:
             ret = '%s %s %s %s %s %s'
         return ret % tuple(self.toArray())
 
+    def __hash__(self):
+        if self.type == 'sym':
+            return hash((self.type, self.path, self.target))
+        if self.type == 'dir':
+            return hash((self.type, self.path))
+        return hash((self.type, self.path, self.md5))
+
+    def __lt__(self, other):
+        return self.path < other.path
+
+    def __eq__(self, other):
+
+        if self.path == other.path:
+            if self.type == 'sym':
+                return self.target == other.target
+            else:
+                return self.md5 == other.md5
+        return False
+
+
 
     def toArray(self):
         target_or_md5 = self.target if self.type == 'sym' else self.md5
@@ -99,4 +170,12 @@ class Entry:
                     break
                 md5.update(data)
         return md5.hexdigest()
+
+
+#class PathEntry(Entry):
+#    def __hash__(self):
+#        return hash(self.path)
+#
+#    def __eq__(self, other):
+#        return self.path == self.other
 
