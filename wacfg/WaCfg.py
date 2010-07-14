@@ -10,7 +10,6 @@ class tools:
 
     @staticmethod
     def archive_unpack():
-
         if Env.src and os.path.isfile(Env.src):
             OUT("src set correctly to: %s" % Env.src)
             srcfile = Env.src
@@ -52,8 +51,6 @@ class tools:
 #        OUT("write information to global db, e.g. /var/db/wacfg")
 #        path = Env.cfg._dbdir
 #        # ... XXX
-
-
 
 
     @staticmethod
@@ -122,9 +119,8 @@ class tools:
     @staticmethod
     def mv(frompath, topath, wd="."):
         args = ["/bin/mv", frompath, topath]
-        #if Config.verbosity:
-        #    args += ["-v"]
         return subprocess.call(args, cwd=wd)
+
 
     @staticmethod
     def rsync(frompath, topath, wd="."):
@@ -133,10 +129,7 @@ class tools:
         if not "/" == topath[-1:]:
             topath += "/"
         args = ["/usr/bin/rsync", "-a", frompath, topath]
-        #if Config.verbosity:
-        #    args += ["-v"]
         return subprocess.call(args, cwd=wd)
-
 
 
     @staticmethod
@@ -165,8 +158,9 @@ class tools:
 
     @staticmethod
     def server_own(path="", recursive=False):
-        suser = 'apache'
+        suser = 'apache' # XXX set server-uid/gid here
         return tools.chown(path, suser, suser, recursive)
+
 
     @staticmethod
     def wget(path):
@@ -179,10 +173,9 @@ class tools:
 
 
 
-
-
 class Env:
     pass
+
 
 class WaCfg:
 
@@ -190,8 +183,7 @@ class WaCfg:
         tools.archive_unpack()
 
     def _src_config(self):
-        tools.chmod("0755", recursive=True)
-        tools.server_own(recursive=True)
+        pass
 
     def _src_install(self):
         tools.archive_install()

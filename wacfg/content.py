@@ -18,6 +18,7 @@ class Content:
         self.createEntries()
         os.chdir(olddir)
 
+
     def createEntries(self, path='.'):
             for entry in os.listdir(path):
                 x = os.path.join(path, entry)
@@ -34,37 +35,26 @@ class Content:
             w.writerow(entry.toArray())
         f.close()
 
+
     def checkCSV(self, path):
-        newentries = set()
+        oldentries = set()
         f = open(path, 'r')
         w = csv.reader(f, delimiter=' ', quotechar='"')
         for entry in w:
-            newentries.add(Entry(array=entry))
+            oldentries.add(Entry(array=entry))
         f.close()
-
         if len(self.entries) == 0:
-            self.entries = newentries
+            self.entries = oldentries
             return
         else:
-            diff = self.entries - newentries
-            #import ipdb; ipdb.set_trace()
-            self.entries = newentries
-            return diff
+            self.diff = self.entries - oldentries
+            self.entries = oldentries
+            return self.diff
 
-        #self.compare(newentries)
-
-
-    #def compare(newentries):
-
-
-
-    def toList(self):
-        return sorted(self.entries, key=lambda x: x.path)
 
     def writeMetaCSV(self, Env, path=None):
         if not path:
             path = os.path.join(self.path, '.wacfg')
-
         section = 'general'
         config = configparser.RawConfigParser()
         config.add_section(section)
@@ -134,6 +124,7 @@ class Entry:
             ret = '%s %s %s %s %s %s'
         return ret % tuple(self.toArray())
 
+
     def __hash__(self):
         if self.type == 'sym':
             return hash((self.type, self.path, self.target))
@@ -141,11 +132,12 @@ class Entry:
             return hash((self.type, self.path))
         return hash((self.type, self.path, self.md5))
 
+
     def __lt__(self, other):
         return self.path < other.path
 
-    def __eq__(self, other):
 
+    def __eq__(self, other):
         if self.path == other.path:
             if self.type == 'sym':
                 return self.target == other.target
@@ -154,14 +146,12 @@ class Entry:
         return False
 
 
-
     def toArray(self):
         target_or_md5 = self.target if self.type == 'sym' else self.md5
         return [self.type, self.mod, self.uid, self.gid, self.path, target_or_md5]
 
 
     def file_md5(self, path):
-        #return hashlib.md5(open(path,'rb').read()).hexdigest()
         md5 = hashlib.md5()
         with open(path, 'rb') as file:
             while True:
@@ -171,11 +161,4 @@ class Entry:
                 md5.update(data)
         return md5.hexdigest()
 
-
-#class PathEntry(Entry):
-#    def __hash__(self):
-#        return hash(self.path)
-#
-#    def __eq__(self, other):
-#        return self.path == self.other
 
