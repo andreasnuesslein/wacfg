@@ -58,11 +58,11 @@ class Content:
         section = 'general'
         config = configparser.RawConfigParser()
         config.add_section(section)
-        config.set(section, 'PN', Env.pn)
-        config.set(section, 'PV', Env.pv)
-        config.set(section, 'INSTALLDATE', strftime('%Y-%m-%d %H:%M:%S'))
-        config.set(section, 'INSTALLDIR', Env.installdir)
-        config.set(section, 'HOSTNAME', Env.vhost)
+        config.set(section, 'pn', Env.pn)
+        config.set(section, 'pv', Env.pv)
+        config.set(section, 'installdate', strftime('%Y-%m-%d %H:%M:%S'))
+        config.set(section, 'installdir', Env.installdir)
+        config.set(section, 'vhost', Env.vhost)
         with open(path, 'w') as file:
             config.write(file)
 
@@ -73,10 +73,11 @@ class Content:
         config = configparser.RawConfigParser()
         config.read(path)
         ret = {}
-        ret['pn'] = config.get(section, 'PN')
-        ret['pv'] = config.get(section, 'PV')
-        ret['vhost'] = config.get(section, 'HOSTNAME')
-        ret['installdir'] = config.get(section, 'INSTALLDIR')
+        ret['pn'] = config.get(section, 'pn')
+        ret['pv'] = config.get(section, 'pv')
+        ret['vhost'] = config.get(section, 'vhost')
+        ret['installdir'] = config.get(section, 'installdir')
+        ret['installdate'] = config.get(section. 'installdate')
         return ret
 
 
