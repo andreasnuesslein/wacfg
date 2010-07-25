@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
-import sys, os, subprocess
+import sys
+import os
+import subprocess
 
-from vercmp import vercmp
-from helpers import *
-from config import Config
+from wacfg.vercmp import vercmp
+from wacfg.helpers import *
+from wacfg.config import Config
 
 
 class Env:
@@ -33,6 +35,7 @@ class Application:
             v = app
         return vercmp(self.version, v)
 
+    #
     def valid_exec(self):
         path = os.path.join(Config._appdir, self.name, self.version, "wacfg.py")
         return(os.path.isfile(path))
@@ -41,7 +44,7 @@ class Application:
         if self.valid_exec():
             args = ["/usr/bin/env", "python3", "wacfg.py"]
             wd = "%s/%s/%s" % (Config._appdir, self.name, self.version)
-            subprocess.call(args, env={'PYTHONPATH':"/home/nutz/work/wacfg/wacfg/"}, cwd=wd)
+            subprocess.call(args, cwd=wd)
         else:
             print("no wacfg.py found")
 

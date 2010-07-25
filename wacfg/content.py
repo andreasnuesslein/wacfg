@@ -1,11 +1,12 @@
-import os, hashlib, csv
+import os
+import hashlib
+import csv
 from time import strftime
 
 try:
     import ConfigParser as configparser
 except:
     import configparser
-
 
 
 class Content:
@@ -77,7 +78,7 @@ class Content:
         ret['pv'] = config.get(section, 'pv')
         ret['vhost'] = config.get(section, 'vhost')
         ret['installdir'] = config.get(section, 'installdir')
-        ret['installdate'] = config.get(section. 'installdate')
+        ret['installdate'] = config.get(section, 'installdate')
         return ret
 
 
