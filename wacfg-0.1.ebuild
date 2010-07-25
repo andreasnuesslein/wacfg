@@ -8,11 +8,12 @@ inherit distutils git
 
 DESCRIPTION="WaCfg is a replacement for webapp-config"
 HOMEPAGE=""
-SRC_URI="git://git.noova.de/wacfg.git"
+EGIT_REPO_URI="git://git.noova.de/wacfg.git"
+EGIT_BRANCH="master"
 
 LICENSE="CDDL"
 SLOT="0"
-KEYWORDS="~amd64 ~x86" 
+KEYWORDS="~amd64 ~x86"
 IUSE="+color"
 
 DEPEND=""

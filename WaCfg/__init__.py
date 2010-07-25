@@ -2,9 +2,9 @@ import os, sys
 import tarfile, zipfile
 import subprocess
 
-from config import Config
-from content import Content
-from helpers import OUT
+from .config import Config
+from .content import Content
+from .helpers import OUT
 
 VERSION = (0, 1, 0, 'final', 0)
 
