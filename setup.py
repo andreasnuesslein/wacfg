@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = "wacfg",
-    version = __import__('wacfg').__version__(),
+    version = __import__('WaCfg').__version__(),
     description = 'Webapp-config reloaded',
     author = 'Andreas Nuesslein',
     author_email = 'nutz@noova.de',
