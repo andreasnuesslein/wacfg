@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
-from WaCfg import install
+from WaCfg import main
 
-install(source="http://%(PN)s.org/%(P)s.tar.gz")
+main(source="http://%(PN)s.org/%(P)s.tar.gz")
+

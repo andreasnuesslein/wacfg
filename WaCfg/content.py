@@ -36,14 +36,18 @@ class Content:
             w.writerow(entry.toArray())
         f.close()
 
-
-    def checkCSV(self, path):
+    def readCSV(self, path):
         oldentries = set()
         f = open(path, 'r')
         w = csv.reader(f, delimiter=' ', quotechar='"')
         for entry in w:
             oldentries.add(Entry(array=entry))
         f.close()
+        return oldentries
+
+
+    def checkCSV(self, path):
+        oldentries = self.readCSV(path)
         if len(self.entries) == 0:
             self.entries = oldentries
             return
@@ -163,4 +167,11 @@ class Entry:
                 md5.update(data)
         return md5.hexdigest()
 
-
+    def delete(self):
+        # XXX this needs fixin'
+        if self.type == 'dir':
+            pass
+            #os.rmdir(self.path)
+        else:
+            print(self.path)
+            #os.remove(self.path)

@@ -7,6 +7,7 @@ from .config import Config
 from .content import Content
 from .helpers import OUT
 from .vercmp import pkgsplit
+from WaCfg import optparsing
 
 VERSION = (0, 1, 0, 'final', 0)
 
@@ -179,7 +180,7 @@ class tools:
 
     @staticmethod
     def server_own(path="", recursive=False):
-        suser = 'apache' # XXX set server-uid/gid here
+        suser = Env.server # XXX set server-uid/gid here
         return tools.chown(path, suser, suser, recursive)
 
 
@@ -222,18 +223,26 @@ class WaCfg:
         pass
 
 
-def install(Handler=WaCfg, source=None, vhost="localhost", installdir=None):
+def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None):
+    parser = optparsing.waopts()
 
-    # --------------------------------------
+    (Env.options, Env.args) = parser.parse_args()
+    print(Env.options)
+    print(Env.args)
+
+    # ------------------------------------------------------------------------
     # Setting the environment
-    Env.cfg = Config()
-    Env.vhost = vhost
-
     Env.p = os.path.basename(sys.argv[0])[:-3]
-    (Env.pn, Env.pv, Env.rev) = pkgsplit(Env.p)
-    Env.installdir = installdir or Env.pn
+    Env.pn, Env.pv, Env.rev = pkgsplit(Env.p)
+    #sys.exit(1)
+
+    Env.cfg = Config()
+    Env.vhost = Env.options.vhost or vhost or "localhost"
+    Env.installdir = Env.options.installdir or installdir or Env.pn
+    Env.server = Env.options.server or server or "apache"
     Env.sboxpath = os.path.join(Env.cfg._sandboxroot, Env.pn)
-    Env.destpath = os.path.join(Env.cfg.wwwroot, vhost, "htdocs", Env.installdir)
+    Env.destpath = os.path.join(Env.cfg.wwwroot,
+            Env.vhost, "htdocs", Env.installdir)
 
     Env.src = source
     if Env.src:
@@ -244,22 +253,67 @@ def install(Handler=WaCfg, source=None, vhost="localhost", installdir=None):
         if Env.src.startswith(("ftp://","http://")):
             Env.src = tools.wget(Env.src)
 
+    Env.App = Handler()
 
-    App = Handler()
+    try:
+        {'install': install,
+        'upgrade': upgrade,
+        'remove': remove,
+        'purge': purge,
+        }[Env.args[0]]()
+    except:
+        upgrade()
 
+
+
+def install():
+    destpath_s = os.path.join(Env.destpath, '%s')
+    if os.path.isfile(destpath_s % '.wacfg'):
+        print("Directory alread exists at %s\n Please use upgrade instead." % Env.destpath)
+    else:
+        upgrade()
+
+def upgrade():
 
     # --------------------------------------
     # Going through the 4 steps...
     OUT("Unpacking source...", 2)
-    App.src_unpack() if "src_unpack" in dir(App) else App._src_unpack()
+    Env.App.src_unpack() if "src_unpack" in dir(Env.App) else Env.App._src_unpack()
 
     OUT("Configuring source...", 2)
-    App.src_config() if "src_config" in dir(App) else App._src_config()
+    Env.App.src_config() if "src_config" in dir(Env.App) else Env.App._src_config()
 
     OUT("Installing...", 2)
-    App.src_install() if "src_install" in dir(App) else App._src_install()
+    Env.App.src_install() if "src_install" in dir(Env.App) else Env.App._src_install()
 
     OUT("PostInst...", 2)
-    App.post_install() if "post_install" in dir(App) else App._post_install()
+    Env.App.post_install() if "post_install" in dir(Env.App) else Env.App._post_install()
 
 
+def remove():
+    sboxpath_s = os.path.join(Env.sboxpath, '%s')
+    destpath_s = os.path.join(Env.destpath, '%s')
+    infofile = '.wacfg'
+    contentfile = '.wacfg-%s-%s'
+
+    if os.path.isfile(destpath_s % '.wacfg'):
+        print("fooo")
+        ex_content = Content(Env.destpath)
+        metacsv = ex_content.readMetaCSV()
+        infocsv = destpath_s % contentfile % (metacsv['pn'], metacsv['pv'])
+        entries = ex_content.readCSV(infocsv)
+        for entry in entries:
+            print(entry)
+            entry.delete()
+
+
+
+def purge():
+    if not os.path.isfile(os.path.join(Env.destpath, '.wacfg')):
+        print("The given path does not contain a wacfg-installation.. aborting")
+        sys.exit(1)
+    else:
+        print("The directory '%s' will be completely deleted with all its contents." % Env.destpath)
+        x = raw_input("Are you sure? (y/N) ")
+        if x in "yYjJ":
+            tools.rm(Env.destpath, recursive=True)

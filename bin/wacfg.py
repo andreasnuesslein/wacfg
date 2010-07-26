@@ -93,19 +93,10 @@ class ApplicationList:
 
 
 def main():
+    from WaCfg import optparsing
     from optparse import OptionParser, OptionGroup
-    parser = OptionParser()
 
-    #------------------------------------------------------------------
-    # Usage
-    group = OptionGroup(parser, 'lots of output here..',
-                        'The name and version number of the web appli'
-                        'cation to install e.g. phpmyadmin 2.5.4. The'
-                        ' APPLICATION must have already been installed'
-                        ' into the directory tree using emerge')
-
-    parser.add_option_group(group)
-    #-----------------------------------------------------------------
+    parser = optparsing.waopts()
 
     default_group = OptionGroup(parser, "General Options")
     default_group.add_option("-l", "--list", action="store_true", dest="list",
@@ -114,11 +105,6 @@ def main():
             help="increase verbosity")
 
     parser.add_option_group(default_group)
-
-    app_group = OptionGroup(parser, "Application Options")
-    app_group.add_option("-I", "--install", action="store_true", dest="install",
-            default=False, help="install the latest version of <application>")
-    parser.add_option_group(app_group)
 
     (Env.options, Env.args) = parser.parse_args()
 
@@ -129,12 +115,26 @@ def main():
 
     Config.verbosity = Env.options.verbose
 
+    try:
+        function = {'install': 'install',
+         'upgrade': 'upgrade',
+         'remove': 'remove',
+         'purge': 'purge',
+         }[Env.args[0]]
+    except:
+        parser.print_help()
+        sys.exit(1)
+
+
+    print(function)
+    sys.exit(1)
+
     # Evaluate Options
     if Env.options.install:
-        if len(Env.args) < 2:
+        if len(Env.args) < 3:
             # XXX maybe just use the latest version here...
             return "Please specify a correct package and version"
-        Application(Env.args[0], Env.args[1]).install()
+        Application(Env.args[1], Env.args[2]).install()
 
     if Env.options.list:
         if len(Env.args) == 0:
