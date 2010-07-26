@@ -1,10 +1,12 @@
 import os, sys
 import tarfile, zipfile
 import subprocess
+import time
 
 from .config import Config
 from .content import Content
 from .helpers import OUT
+from .vercmp import pkgsplit
 
 VERSION = (0, 1, 0, 'final', 0)
 
@@ -20,24 +22,24 @@ class tools:
     @staticmethod
     def archive_unpack():
         if Env.src and os.path.isfile(Env.src):
-            OUT("src set correctly to: %s" % Env.src)
-            srcfile = Env.src
+            OUT("Source set correctly to: %s" % Env.src, 2)
         else:
-            OUT("guessing name")
-            names = [Env.pn, Env.pn+"-"+Env.pv, "latest"]
-            suffixes = ["", ".tar", ".gz", ".bz2", ".tar.gz", ".tgz", ".tar.bz2", ".zip"]
+            OUT("Guessing sourcefile from packagename...", 2)
+            names = [Env.pn, Env.pn+"-"+Env.pv]
+            suffixes = ["", ".tar", ".gz", ".bz2", ".tar.gz", ".tgz", ".tar.bz2", ".zip", ".ZIP"]
             try:
-                srcfile = [name+suffix for name in names for suffix in suffixes if os.path.isfile(name+suffix)][0]
+                Env.src = [name+suffix for name in names for suffix in suffixes if os.path.isfile(name+suffix)][0]
             except IndexError:
-                OUT("No archive found")
+                OUT("No sourcefile explicitely set or found in this folder", 0)
                 sys.exit(1)
 
-        if zipfile.is_zipfile(srcfile):
-            source = zipfile.ZipFile(srcfile)
-        elif tarfile.is_tarfile(srcfile):
-            source = tarfile.open(srcfile)
+        if zipfile.is_zipfile(Env.src):
+            source = zipfile.ZipFile(Env.src)
+        elif tarfile.is_tarfile(Env.src):
+            source = tarfile.open(Env.src)
         else:
-            raise Exception("Not a valid archive")
+            OUT("Not a valid archive", 0)
+            sys.exit(1)
 
         source.extractall(path = Env.sboxpath)
 
@@ -45,12 +47,13 @@ class tools:
         # Check whether we extracted a folder into a folder...
         dir = os.listdir(Env.sboxpath)
         if len(dir) == 0:
-            raise Exception("no files in sandbox, something went wrong")
+            OUT("No files in sandbox, something went wrong", 0)
+            sys.exit(1)
         if len(dir) == 1:
             wd = os.path.dirname(Env.sboxpath)
             tmpdir = "._unzip%s" % (Env.pn)
             tools.mv(os.path.join(Env.sboxpath,dir[0]),tmpdir,wd)
-            os.rmdir(Env.sboxpath)
+            tools.rm(Env.sboxpath, recursive=True)
             tools.mv(tmpdir, Env.sboxpath, wd)
 
         return
@@ -75,24 +78,21 @@ class tools:
             if os.path.isfile(destpath_s % infofile):
                 ex_content = Content(Env.destpath)
                 metacsv = ex_content.readMetaCSV()
-                manuallychanged = ex_content.checkCSV(
-                        destpath_s % contentfile %
-                        (metacsv['pn'], metacsv['pv'])
-                        )
+                infocsv = destpath_s % contentfile % (metacsv['pn'], metacsv['pv'])
+                manuallychanged = ex_content.checkCSV(infocsv)
+                tools.rm(infocsv)
 
-                OUT(manuallychanged)
-
-                #act_content = Content(Env.)
-
-                # update process
-                # ex_info = Content().readMetaCSV(infofile)
-                # ex_info[
-
+                if manuallychanged:
+                    OUT('The following files have been manually changed:')
+                    for file in manuallychanged:
+                        OUT("\t- %s" % file.path)
+                    OUT('\nPlease run:')
+                    OUT('CONFIG_PROTECT="tmp/installed/localhost/htdocs/wordpress/" etc-update')
 
             else:
                 # XXX Folder exists, but no .wacfg-files...
                 OUT("Either you installed this manually before or some \
-                        goofball erased the .wacfg-files.\nEither way, I'm exiting")
+                        goofball erased the .wacfg-files.\nEither way, I'm exiting", 0)
                 sys.exit(1)
 
         # Create a ContentCSV for sandboxdir
@@ -100,7 +100,7 @@ class tools:
         Env.sboxcontent.writeCSV(sboxpath_s % contentfile % (Env.pn, Env.pv))
         Env.sboxcontent.writeMetaCSV(Env)
 
-        # mv files that have been changed manually.
+        # Move files that have been changed manually
         if manuallychanged:
             for entry in manuallychanged:
                 relpth = os.path.relpath(entry.path)
@@ -121,9 +121,21 @@ class tools:
             os.makedirs(os.path.split(Env.destpath)[0])
         except:
             pass
-        tools.rsync(Env.sboxpath, Env.destpath)
+        if tools.rsync(Env.sboxpath, Env.destpath) == 0:
+            tools.rm(Env.sboxpath, recursive=True)
+        else:
+            OUT("Rsync exited abnormally :-(", 0)
+            sys.exit(1)
         return
 
+
+    @staticmethod
+    def rm(rmpath, wd=".", recursive=False):
+        args = ["/bin/rm"]
+        if recursive:
+            args += ["-r"]
+        args += [rmpath]
+        return subprocess.call(args, cwd=wd)
 
     @staticmethod
     def mv(frompath, topath, wd="."):
@@ -174,10 +186,19 @@ class tools:
     @staticmethod
     def wget(path):
         output = path.split("/")[-1]
-        args = ["/usr/bin/wget", "--continue"]
+        args = ["/usr/bin/wget", "--continue", "--no-verbose"]
         args += ["--output-document=%s" % output]
         args += [path]
-        subprocess.call(args)
+        p1 = subprocess.call(args)
+#        #print(p1.poll())
+#        i=1
+#        while not p1.poll() and p1.poll() != 0:
+#            dots = "."*(i%4)
+#            i+=1
+#            print("\rDownloading %s" % dots),
+#            sys.stdout.flush()
+#            time.sleep(0.1)
+#        print(" done\n")
         return output
 
 
@@ -206,11 +227,10 @@ def install(Handler=WaCfg, source=None, vhost="localhost", installdir=None):
     # --------------------------------------
     # Setting the environment
     Env.cfg = Config()
-
     Env.vhost = vhost
 
-    Env.pn = os.path.basename(os.path.dirname(os.getcwd()))
-    Env.pv = os.path.basename(os.getcwd())
+    Env.p = os.path.basename(sys.argv[0])[:-3]
+    (Env.pn, Env.pv, Env.rev) = pkgsplit(Env.p)
     Env.installdir = installdir or Env.pn
     Env.sboxpath = os.path.join(Env.cfg._sandboxroot, Env.pn)
     Env.destpath = os.path.join(Env.cfg.wwwroot, vhost, "htdocs", Env.installdir)
@@ -230,18 +250,16 @@ def install(Handler=WaCfg, source=None, vhost="localhost", installdir=None):
 
     # --------------------------------------
     # Going through the 4 steps...
-    OUT("Unpacking source...")
+    OUT("Unpacking source...", 2)
     App.src_unpack() if "src_unpack" in dir(App) else App._src_unpack()
 
-    OUT("Configuring source...")
+    OUT("Configuring source...", 2)
     App.src_config() if "src_config" in dir(App) else App._src_config()
 
-    OUT("Installing...")
+    OUT("Installing...", 2)
     App.src_install() if "src_install" in dir(App) else App._src_install()
 
-    OUT("PostInst...")
+    OUT("PostInst...", 2)
     App.post_install() if "post_install" in dir(App) else App._post_install()
 
-
-    OUT("May the source be with you...")
 

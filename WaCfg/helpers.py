@@ -1,6 +1,7 @@
 
 def OUT(str, verbosity=1):
-    print(str)
+    if verbosity <= 1:
+        print(str)
 
 def uniq(seq):
     seen = set()
