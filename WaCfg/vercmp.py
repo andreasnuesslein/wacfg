@@ -9,9 +9,14 @@ __all__ = [
 
 import re
 
+
+_pkg = r'[\w+][\w+-]*?'
+
 _v = r'(cvs\.)?(\d+)((\.\d+)*)([a-z]?)((_(pre|p|beta|alpha|rc)\d*)*)'
 _rev = r'\d+'
 _vr = _v + '(-r(' + _rev + '))?'
+
+_pv = '(?P<pn>' + _pkg + '(?P<pn_inval>-' + _vr + ')?)' + '-(?P<ver>' + _v + ')(-r(?P<rev>' + _rev + '))?'
 
 ver_regexp = re.compile("^" + _vr + "$")
 suffix_regexp = re.compile("^(alpha|beta|rc|pre|p)(\\d*)$")
@@ -183,4 +188,26 @@ def vercmp(ver1, ver2, silent=1):
 	rval = (r1 > r2) - (r1 < r2)
 	vercmp_cache[mykey] = rval
 	return rval
+
+
+
+_pv_re = re.compile('^' + _pv + '$', re.VERBOSE)
+
+
+def pkgsplit(pkg):
+	"""
+	@param pkg: pv
+	@return:
+	1. None if input is invalid.
+	2. (pn, ver, rev) if input is pv
+	"""
+	m = _pv_re.match(pkg)
+	if m is None:
+		return None
+
+	if m.group('pn_inval') is not None:
+		# package name appears to have a version-like suffix
+		return None
+
+	return  (m.group('pn'), m.group('ver'), m.group('rev'))
 
