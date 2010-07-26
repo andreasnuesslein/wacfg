@@ -48,7 +48,7 @@ class Content:
             self.entries = oldentries
             return
         else:
-            self.diff = self.entries - oldentries
+            self.diff = oldentries - self.entries
             self.entries = oldentries
             return self.diff
 
