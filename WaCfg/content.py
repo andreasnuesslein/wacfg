@@ -9,9 +9,14 @@ except:
     import configparser
 
 
+
+cfile = '.wacfg-%s-%s'
+
 class Content:
-    def __init__(self, path):
+    def __init__(self, path, pn=None, pv=None):
         self.path = path
+        self.pn = pn
+        self.pv = pv
         self.entries = set()
 
         olddir = os.getcwd()
@@ -26,40 +31,46 @@ class Content:
                 if os.path.isdir(x):
                     self.createEntries(x)
                 if not "./.wacfg" in x:
-                    self.entries.add(Entry(path=x))
+                    self.entries.add(Entry(wd=os.path.abspath(path),path=x))
+
+    def setOperation(self, operation):
+        if not self.csventries:
+            return self.entries
+        return( operation(self.entries, self.csventries) )
+
+    def removeFiles(self):
+        self.readCSV()
+        entries = self.setOperation( lambda x,y: x & y )
+        for entry in sorted(entries, key=lambda x:x.type, reverse=True):
+            entry.remove()
 
 
-    def writeCSV(self, path):
-        f = open(path, 'w')
+    def writeCSV(self, pn=None, pv=None):
+        pn = pn or self.pn
+        pv = pv or self.pv
+        file = os.path.join(self.path, cfile % (pn, pv))
+        f = open(file, 'w')
         w = csv.writer(f, delimiter=' ', quotechar='"')
         for entry in self.entries:
             w.writerow(entry.toArray())
         f.close()
 
-    def readCSV(self, path):
-        oldentries = set()
-        f = open(path, 'r')
+    def readCSV(self, pn=None, pv=None):
+        pn = pn or self.pn or self.readMetaCSV()['pn']
+        pv = pv or self.pv or self.readMetaCSV()['pv']
+        file = os.path.join(self.path, cfile % (pn, pv))
+        f = open(file, 'r')
         w = csv.reader(f, delimiter=' ', quotechar='"')
+
+        self.csventries = set()
         for entry in w:
-            oldentries.add(Entry(array=entry))
+            self.csventries.add(Entry(wd=os.path.abspath(self.path),array=entry))
         f.close()
-        return oldentries
+        return self.csventries
 
 
-    def checkCSV(self, path):
-        oldentries = self.readCSV(path)
-        if len(self.entries) == 0:
-            self.entries = oldentries
-            return
-        else:
-            self.diff = oldentries - self.entries
-            self.entries = oldentries
-            return self.diff
-
-
-    def writeMetaCSV(self, Env, path=None):
-        if not path:
-            path = os.path.join(self.path, '.wacfg')
+    def writeMetaCSV(self, Env):
+        metafile = os.path.join(self.path, '.wacfg')
         section = 'general'
         config = configparser.RawConfigParser()
         config.add_section(section)
@@ -68,15 +79,14 @@ class Content:
         config.set(section, 'installdate', strftime('%Y-%m-%d %H:%M:%S'))
         config.set(section, 'installdir', Env.installdir)
         config.set(section, 'vhost', Env.vhost)
-        with open(path, 'w') as file:
+        with open(metafile, 'w') as file:
             config.write(file)
 
-    def readMetaCSV(self, path=None):
-        if not path:
-                path = os.path.join(self.path, '.wacfg')
+    def readMetaCSV(self):
+        metafile = os.path.join(self.path, '.wacfg')
         section = 'general'
         config = configparser.RawConfigParser()
-        config.read(path)
+        config.read(metafile)
         ret = {}
         ret['pn'] = config.get(section, 'pn')
         ret['pv'] = config.get(section, 'pv')
@@ -87,7 +97,8 @@ class Content:
 
 
 class Entry:
-    def __init__(self, path=None, array=None):
+    def __init__(self, wd, path=None, array=None):
+        self.wd = wd
         if path:
             self._init_by_path(path)
         elif array:
@@ -95,7 +106,6 @@ class Entry:
 
     def _init_by_path(self, path):
         self.path = path
-
         stat = os.lstat(path)
         self.mtime = stat.st_mtime
         self.mod = stat.st_mode
@@ -130,7 +140,6 @@ class Entry:
             ret = '%s %s %s %s %s %s'
         return ret % tuple(self.toArray())
 
-
     def __hash__(self):
         if self.type == 'sym':
             return hash((self.type, self.path, self.target))
@@ -138,10 +147,8 @@ class Entry:
             return hash((self.type, self.path))
         return hash((self.type, self.path, self.md5))
 
-
     def __lt__(self, other):
         return self.path < other.path
-
 
     def __eq__(self, other):
         if self.path == other.path:
@@ -156,7 +163,6 @@ class Entry:
         target_or_md5 = self.target if self.type == 'sym' else self.md5
         return [self.type, self.mod, self.uid, self.gid, self.path, target_or_md5]
 
-
     def file_md5(self, path):
         md5 = hashlib.md5()
         with open(path, 'rb') as file:
@@ -167,11 +173,14 @@ class Entry:
                 md5.update(data)
         return md5.hexdigest()
 
-    def delete(self):
-        # XXX this needs fixin'
+    def remove(self):
+        # XXX This is not yet working perfectly
+        abspath = os.path.join(self.wd, self.path)
         if self.type == 'dir':
-            pass
-            #os.rmdir(self.path)
+            try:
+                os.removedirs(abspath)
+            except:
+                pass
         else:
-            print(self.path)
-            #os.remove(self.path)
+            os.remove(abspath)
+

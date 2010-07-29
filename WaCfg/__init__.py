@@ -70,18 +70,14 @@ class tools:
     def archive_install():
         sboxpath_s = os.path.join(Env.sboxpath, '%s')
         destpath_s = os.path.join(Env.destpath, '%s')
-        infofile = '.wacfg'
-        contentfile = '.wacfg-%s-%s'
 
         manuallychanged = None
 
         if os.path.isdir(Env.destpath):
-            if os.path.isfile(destpath_s % infofile):
-                ex_content = Content(Env.destpath)
-                metacsv = ex_content.readMetaCSV()
-                infocsv = destpath_s % contentfile % (metacsv['pn'], metacsv['pv'])
-                manuallychanged = ex_content.checkCSV(infocsv)
-                tools.rm(infocsv)
+            if os.path.isfile(destpath_s % '.wacfg'):
+                content = Content(Env.destpath)
+                csventries = content.readCSV()
+                manuallychanged = content.setOperation( lambda x,y: y-x )
 
                 if manuallychanged:
                     OUT('The following files have been manually changed:')
@@ -97,11 +93,11 @@ class tools:
                 sys.exit(1)
 
         # Create a ContentCSV for sandboxdir
-        Env.sboxcontent = Content(Env.sboxpath)
-        Env.sboxcontent.writeCSV(sboxpath_s % contentfile % (Env.pn, Env.pv))
+        Env.sboxcontent = Content(Env.sboxpath, Env.pn, Env.pv)
+        Env.sboxcontent.writeCSV()
         Env.sboxcontent.writeMetaCSV(Env)
 
-        # Move files that have been changed manually
+        # Move files that have custom changes
         if manuallychanged:
             for entry in manuallychanged:
                 relpth = os.path.relpath(entry.path)
@@ -223,6 +219,48 @@ class WaCfg:
         pass
 
 
+def install():
+    destpath_s = os.path.join(Env.destpath, '%s')
+    if os.path.isfile(destpath_s % '.wacfg'):
+        print("Directory alread exists at %s\n Please use upgrade instead." % Env.destpath)
+    else:
+        upgrade()
+
+
+def upgrade():
+    OUT("Unpacking source...", 2)
+    Env.App.src_unpack() if "src_unpack" in dir(Env.App) else Env.App._src_unpack()
+
+    OUT("Configuring source...", 2)
+    Env.App.src_config() if "src_config" in dir(Env.App) else Env.App._src_config()
+
+    OUT("Installing...", 2)
+    Env.App.src_install() if "src_install" in dir(Env.App) else Env.App._src_install()
+
+    OUT("PostInst...", 2)
+    Env.App.post_install() if "post_install" in dir(Env.App) else Env.App._post_install()
+
+
+def remove():
+    destpath_s = os.path.join(Env.destpath, '%s')
+
+    if os.path.isfile(destpath_s % '.wacfg'):
+        content = Content(Env.destpath)
+        content.readCSV()
+        content.removeFiles()
+
+
+def purge():
+    if not os.path.isfile(os.path.join(Env.destpath, '.wacfg')):
+        print("The given path does not contain a wacfg-installation.. aborting")
+        sys.exit(1)
+    else:
+        print("The directory '%s' will be completely deleted with all its contents." % Env.destpath)
+        x = raw_input("Are you sure? (y/N) ")
+        if x in "yYjJ":
+            tools.rm(Env.destpath, recursive=True)
+
+
 def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None):
     parser = optparsing.waopts()
 
@@ -261,59 +299,9 @@ def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None):
         'remove': remove,
         'purge': purge,
         }[Env.args[0]]()
-    except:
-        upgrade()
+    except Exception as e:
+        print(e)
+        pass
 
 
 
-def install():
-    destpath_s = os.path.join(Env.destpath, '%s')
-    if os.path.isfile(destpath_s % '.wacfg'):
-        print("Directory alread exists at %s\n Please use upgrade instead." % Env.destpath)
-    else:
-        upgrade()
-
-def upgrade():
-
-    # --------------------------------------
-    # Going through the 4 steps...
-    OUT("Unpacking source...", 2)
-    Env.App.src_unpack() if "src_unpack" in dir(Env.App) else Env.App._src_unpack()
-
-    OUT("Configuring source...", 2)
-    Env.App.src_config() if "src_config" in dir(Env.App) else Env.App._src_config()
-
-    OUT("Installing...", 2)
-    Env.App.src_install() if "src_install" in dir(Env.App) else Env.App._src_install()
-
-    OUT("PostInst...", 2)
-    Env.App.post_install() if "post_install" in dir(Env.App) else Env.App._post_install()
-
-
-def remove():
-    sboxpath_s = os.path.join(Env.sboxpath, '%s')
-    destpath_s = os.path.join(Env.destpath, '%s')
-    infofile = '.wacfg'
-    contentfile = '.wacfg-%s-%s'
-
-    if os.path.isfile(destpath_s % '.wacfg'):
-        print("fooo")
-        ex_content = Content(Env.destpath)
-        metacsv = ex_content.readMetaCSV()
-        infocsv = destpath_s % contentfile % (metacsv['pn'], metacsv['pv'])
-        entries = ex_content.readCSV(infocsv)
-        for entry in entries:
-            print(entry)
-            entry.delete()
-
-
-
-def purge():
-    if not os.path.isfile(os.path.join(Env.destpath, '.wacfg')):
-        print("The given path does not contain a wacfg-installation.. aborting")
-        sys.exit(1)
-    else:
-        print("The directory '%s' will be completely deleted with all its contents." % Env.destpath)
-        x = raw_input("Are you sure? (y/N) ")
-        if x in "yYjJ":
-            tools.rm(Env.destpath, recursive=True)
