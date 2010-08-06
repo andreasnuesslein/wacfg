@@ -4,7 +4,8 @@
 # $Id: versions.py 15410 2010-02-20 09:28:03Z zmedico $
 
 __all__ = [
-        'vercmp'
+        'vercmp',
+        'pkgsplit'
 ]
 
 import re

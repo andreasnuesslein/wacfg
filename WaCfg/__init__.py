@@ -5,7 +5,7 @@ import time
 
 from .config import Config
 from .content import Content
-from .helpers import OUT
+from .helpers import identify_server
 from .vercmp import pkgsplit
 from WaCfg import optparsing
 
@@ -58,13 +58,6 @@ class tools:
             tools.mv(tmpdir, Env.sboxpath, wd)
 
         return
-
-
-#    def wacfg_global_info_install():
-#        OUT("write information to global db, e.g. /var/db/wacfg")
-#        path = Env.cfg._dbdir
-#        # ... XXX
-
 
     @staticmethod
     def archive_install():
@@ -249,7 +242,6 @@ def remove():
         content.readCSV()
         content.removeFiles()
 
-
 def purge():
     if not os.path.isfile(os.path.join(Env.destpath, '.wacfg')):
         print("The given path does not contain a wacfg-installation.. aborting")
@@ -277,7 +269,8 @@ def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None):
     Env.cfg = Config()
     Env.vhost = Env.options.vhost or vhost or "localhost"
     Env.installdir = Env.options.installdir or installdir or Env.pn
-    Env.server = Env.options.server or server or "apache"
+    Env.server = Env.options.server or server or identify_server()
+    OUT.debug("Server: %s" % Env.server)
     Env.sboxpath = os.path.join(Env.cfg._sandboxroot, Env.pn)
     Env.destpath = os.path.join(Env.cfg.wwwroot,
             Env.vhost, "htdocs", Env.installdir)
@@ -293,15 +286,22 @@ def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None):
 
     Env.App = Handler()
 
+    # ------------------------------------------------------------------------
     try:
         {'install': install,
         'upgrade': upgrade,
         'remove': remove,
         'purge': purge,
         }[Env.args[0]]()
-    except Exception as e:
-        print(e)
-        pass
+    except KeyError as e:
+        OUT.error("You've entered an invalid command: %s" % e)
+    except IndexError as e:
+        OUT.warn("No command given, doing upgrade")
+        upgrade()
+    except Error as e:
+        OUT.error("Couldn't parse your input. Error: %s" % e)
+
+
 
 
 
