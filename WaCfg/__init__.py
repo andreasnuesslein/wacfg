@@ -2,12 +2,14 @@ import os, sys
 import tarfile, zipfile
 import subprocess
 import time
+import logging
 
 from .config import Config
 from .content import Content
 from .helpers import identify_server
 from .vercmp import pkgsplit
 from WaCfg import optparsing
+from .output import *
 
 VERSION = (0, 1, 0, 'final', 0)
 
@@ -23,15 +25,15 @@ class tools:
     @staticmethod
     def archive_unpack():
         if Env.src and os.path.isfile(Env.src):
-            OUT("Source set correctly to: %s" % Env.src, 2)
+            OUT.debug("Source set correctly to: %s" % Env.src)
         else:
-            OUT("Guessing sourcefile from packagename...", 2)
+            OUT.debug("Guessing sourcefile from packagename...")
             names = [Env.pn, Env.pn+"-"+Env.pv]
             suffixes = ["", ".tar", ".gz", ".bz2", ".tar.gz", ".tgz", ".tar.bz2", ".zip", ".ZIP"]
             try:
                 Env.src = [name+suffix for name in names for suffix in suffixes if os.path.isfile(name+suffix)][0]
             except IndexError:
-                OUT("No sourcefile explicitely set or found in this folder", 0)
+                OUT.error("No sourcefile explicitely set or found in this folder")
                 sys.exit(1)
 
         if zipfile.is_zipfile(Env.src):
@@ -39,7 +41,7 @@ class tools:
         elif tarfile.is_tarfile(Env.src):
             source = tarfile.open(Env.src)
         else:
-            OUT("Not a valid archive", 0)
+            OUT.error("Not a valid archive")
             sys.exit(1)
 
         source.extractall(path = Env.sboxpath)
@@ -48,7 +50,7 @@ class tools:
         # Check whether we extracted a folder into a folder...
         dir = os.listdir(Env.sboxpath)
         if len(dir) == 0:
-            OUT("No files in sandbox, something went wrong", 0)
+            OUT.error("No files in sandbox, something went wrong")
             sys.exit(1)
         if len(dir) == 1:
             wd = os.path.dirname(Env.sboxpath)
@@ -73,16 +75,16 @@ class tools:
                 manuallychanged = content.setOperation( lambda x,y: y-x )
 
                 if manuallychanged:
-                    OUT('The following files have been manually changed:')
+                    OUT.info('The following files have been manually changed:')
                     for file in manuallychanged:
-                        OUT("\t- %s" % file.path)
-                    OUT('\nPlease run:')
-                    OUT('CONFIG_PROTECT="tmp/installed/localhost/htdocs/wordpress/" etc-update')
+                        OUT.info("\t- %s" % file.path)
+                    OUT.info('\nPlease run:')
+                    OUT.info('CONFIG_PROTECT="tmp/installed/localhost/htdocs/wordpress/" etc-update')
 
             else:
                 # XXX Folder exists, but no .wacfg-files...
-                OUT("Either you installed this manually before or some \
-                        goofball erased the .wacfg-files.\nEither way, I'm exiting", 0)
+                OUT.error("Either you installed this manually before or some \
+                        goofball erased the .wacfg-files.\nEither way, I'm exiting")
                 sys.exit(1)
 
         # Create a ContentCSV for sandboxdir
@@ -114,7 +116,7 @@ class tools:
         if tools.rsync(Env.sboxpath, Env.destpath) == 0:
             tools.rm(Env.sboxpath, recursive=True)
         else:
-            OUT("Rsync exited abnormally :-(", 0)
+            OUT.error("Rsync exited abnormally :-(")
             sys.exit(1)
         return
 
@@ -154,7 +156,7 @@ class tools:
 
 
     @staticmethod
-    def chown(owner, group=None, path="", recursive=False):
+    def chown(owner, group=None, path=".", recursive=False):
         path = os.path.join(Env.sboxpath, path)
         args = ["/bin/chown"]
         if recursive:
@@ -164,18 +166,18 @@ class tools:
         else:
             args += [owner]
         args += [path]
+        OUT.debug("Chown-arguments: %s" % args)
         return subprocess.call(args)
 
 
     @staticmethod
-    def server_own(path="", recursive=False):
-        suser = Env.server # XXX set server-uid/gid here
-        return tools.chown(path, suser, suser, recursive)
+    def server_own(path=".", recursive=False):
+        return tools.chown(Env.server, Env.server, path, recursive)
 
 
     @staticmethod
     def wget(path):
-        output = path.split("/")[-1]
+        output = os.path.join("sources/",path.split("/")[-1])
         args = ["/usr/bin/wget", "--continue", "--no-verbose"]
         args += ["--output-document=%s" % output]
         args += [path]
@@ -189,6 +191,7 @@ class tools:
 #            sys.stdout.flush()
 #            time.sleep(0.1)
 #        print(" done\n")
+        Env.src = output
         return output
 
 
@@ -203,7 +206,7 @@ class WaCfg:
         tools.archive_unpack()
 
     def _src_config(self):
-        pass
+        tools.server_own(recursive=True)
 
     def _src_install(self):
         tools.archive_install()
@@ -213,26 +216,25 @@ class WaCfg:
 
 
 def install():
-    destpath_s = os.path.join(Env.destpath, '%s')
-    if os.path.isfile(destpath_s % '.wacfg'):
-        print("Directory alread exists at %s\n Please use upgrade instead." % Env.destpath)
+    if os.path.isfile(os.path.join(Env.destpath, '.wacfg')):
+        OUT.warn("Directory alread exists at %s\n Please use upgrade instead." % Env.destpath)
     else:
         upgrade()
 
-
 def upgrade():
-    OUT("Unpacking source...", 2)
+    OUT.debug("Unpacking source...")
     Env.App.src_unpack() if "src_unpack" in dir(Env.App) else Env.App._src_unpack()
 
-    OUT("Configuring source...", 2)
+    OUT.debug("Configuring source...")
     Env.App.src_config() if "src_config" in dir(Env.App) else Env.App._src_config()
 
-    OUT("Installing...", 2)
+    OUT.debug("Installing...")
     Env.App.src_install() if "src_install" in dir(Env.App) else Env.App._src_install()
 
-    OUT("PostInst...", 2)
+    OUT.debug("PostInst...")
     Env.App.post_install() if "post_install" in dir(Env.App) else Env.App._post_install()
 
+    OUT.info("Successfully installed webapp to %s" % (Env.destpath))
 
 def remove():
     destpath_s = os.path.join(Env.destpath, '%s')
@@ -244,27 +246,31 @@ def remove():
 
 def purge():
     if not os.path.isfile(os.path.join(Env.destpath, '.wacfg')):
-        print("The given path does not contain a wacfg-installation.. aborting")
+        OUT("The given path does not contain a wacfg-installation.. aborting", 0)
         sys.exit(1)
     else:
-        print("The directory '%s' will be completely deleted with all its contents." % Env.destpath)
+        OUT("The directory '%s' will be completely deleted with all its contents." % Env.destpath, 0)
         x = raw_input("Are you sure? (y/N) ")
         if x in "yYjJ":
             tools.rm(Env.destpath, recursive=True)
 
 
 def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None):
-    parser = optparsing.waopts()
 
+    # ------------------------------------------------------------------------
+    # Optionparser
+    parser = optparsing.waopts()
     (Env.options, Env.args) = parser.parse_args()
-    print(Env.options)
-    print(Env.args)
+    if Env.options.verbosity:
+        OUT.setLevel(logging.DEBUG)
+
+    OUT.debug("Optparse Options: %s" % Env.options)
+    OUT.debug("Optparse Arguments: %s" % Env.args)
 
     # ------------------------------------------------------------------------
     # Setting the environment
     Env.p = os.path.basename(sys.argv[0])[:-3]
     Env.pn, Env.pv, Env.rev = pkgsplit(Env.p)
-    #sys.exit(1)
 
     Env.cfg = Config()
     Env.vhost = Env.options.vhost or vhost or "localhost"
@@ -275,14 +281,15 @@ def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None):
     Env.destpath = os.path.join(Env.cfg.wwwroot,
             Env.vhost, "htdocs", Env.installdir)
 
-    Env.src = source
-    if Env.src:
-        Env.src = Env.src % {
+    if source:
+        source = source % {
                 'PN':Env.pn,
                 'PV':Env.pv,
                 'P' :"%s-%s" % (Env.pn, Env.pv)}
-        if Env.src.startswith(("ftp://","http://")):
-            Env.src = tools.wget(Env.src)
+        if source.startswith(("ftp://","http://")):
+            Env.src = tools.wget(source)
+        else:
+            Env.src = os.path.join("sources",source)
 
     Env.App = Handler()
 
@@ -300,8 +307,4 @@ def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None):
         upgrade()
     except Error as e:
         OUT.error("Couldn't parse your input. Error: %s" % e)
-
-
-
-
 

@@ -3,7 +3,7 @@ def waopts():
     from optparse import OptionParser, OptionGroup
     parser = OptionParser()
 
-    group = OptionGroup(parser, 'Package specific options')
+    group = OptionGroup(parser, 'Install location')
 
 #    group.add_option("-i", "--install", action="store_true", dest="install",
 #            default=False, help="Install package")
@@ -23,8 +23,13 @@ def waopts():
             help="Specify another install directory")
 
     group.add_option("-s", "--server", dest="server",
-            default="apache", help="Which server to use. Default is <apache>")
+            default=None, help="Which server to use. Default is <apache>")
 
+    parser.add_option_group(group)
+
+    group = OptionGroup(parser, "Information Options")
+    group.add_option("-v", action="count", dest="verbosity",
+            help="Increase verbosity")
     parser.add_option_group(group)
 
     return parser
