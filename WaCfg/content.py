@@ -24,6 +24,12 @@ class Content:
         self.createEntries()
         os.chdir(olddir)
 
+    def __repr__(self):
+        try:
+            ret = self.readMetaCSV()
+            return "%-10s %s\t@ %s" % (ret['pn'], ret['pv'], self.path)
+        except:
+            return"Webapp @ %s" % (self.path)
 
     def createEntries(self, path='.'):
             for entry in os.listdir(path):
