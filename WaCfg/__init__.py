@@ -8,7 +8,7 @@ from .config import Config
 from .content import Content
 from .helpers import identify_server
 from .vercmp import pkgsplit
-from WaCfg import optparsing
+from . import optparsing
 from .output import *
 
 VERSION = (0, 1, 0, 'final', 0)
@@ -158,16 +158,18 @@ class tools:
     @staticmethod
     def chown(owner, group=None, path=".", recursive=False):
         path = os.path.join(Env.sboxpath, path)
-        args = ["/bin/chown"]
+        args = ["/bin/chown", "--silent"]
         if recursive:
-            args += ["-R"]
+            args += ["--recursive"]
         if group:
             args += ["%s:%s" % (owner,group)]
         else:
             args += [owner]
         args += [path]
         OUT.debug("Chown-arguments: %s" % args)
-        return subprocess.call(args)
+        if subprocess.call(args):
+            OUT.warn("chown exited abnormally.")
+        return
 
 
     @staticmethod
@@ -177,6 +179,10 @@ class tools:
 
     @staticmethod
     def wget(path):
+        try:
+            os.mkdir("sources/")
+        except:
+            pass
         output = os.path.join("sources/",path.split("/")[-1])
         args = ["/usr/bin/wget", "--continue", "--no-verbose"]
         args += ["--output-document=%s" % output]
@@ -217,7 +223,8 @@ class WaCfg:
 
 def install():
     if os.path.isfile(os.path.join(Env.destpath, '.wacfg')):
-        OUT.warn("Directory alread exists at %s\n Please use upgrade instead." % Env.destpath)
+        OUT.warn("Directory alread exists at %s" % Env.destpath)
+        OUT.warn('Use upgrade instead of install.')
     else:
         upgrade()
 
