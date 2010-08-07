@@ -27,30 +27,30 @@ def main():
     OUT.debug("Eng.options: %s" % Env.options)
     OUT.debug("Env.args: %s" % Env.args)
 
-    try:
-        function = {'install': 'install',
-         'upgrade': 'upgrade',
-         'remove': 'remove',
-         'purge': 'purge',
-         }[Env.args[0]]
-    except:
-        parser.print_help()
-        sys.exit(1)
+    if Env.args[0] in ["install","upgrade","remove","purge"]:
+        if len(Env.args) == 1:
+            OUT.error("You need to provide a webapp. Get a list with 'wacfg list'")
+            sys.exit(1)
+
+        argx = [x for x in sys.argv[1:] if x != Env.args[1]]
+        if len(Env.args) == 2:
+            ApplicationList(Env.args[1]).latest_version().install(argx)
+        elif len(Env.args) == 3:
+            Application(Env.args[1], Env.args[2]).install(argx)
 
 
+    if "list" in Env.args:
+        if "installed" in Env.args:
+            InstalledApps().list()
+        elif "available" in Env.args:
+            ApplicationList().list()
+        else:
+            ApplicationList().list()
+            print("\n")
+            InstalledApps().list()
 
-    # Evaluate Options
-    if Env.options.install:
-        if len(Env.args) < 3:
-            # XXX maybe just use the latest version here...
-            return "Please specify a correct package and version"
-        Application(Env.args[1], Env.args[2]).install()
-
-    if Env.options.list:
-        if len(Env.args) == 0:
-            Env.args += [None]
-        ApplicationList(Env.args[0]).list()
-
+    if "upgradeall" in Env.args:
+        InstalledApps().upgrade()
 
 if __name__ == "__main__":
     sys.exit(main())
