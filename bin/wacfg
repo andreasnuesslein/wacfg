@@ -2,19 +2,19 @@
 
 import sys
 
-from WaCfg.config import Config
-from WaCfg.helpers import *
-from WaCfg.vercmp import *
-from WaCfg.output import OUT
-from WaCfg.content import Content
-from WaCfg.webapp import *
+from wacfg.config import Config
+from wacfg.helpers import *
+from wacfg.vercmp import *
+from wacfg.output import OUT
+from wacfg.content import Content
+from wacfg.webapp import *
 
 class Env:
     pass
 
 
 def main():
-    from WaCfg import optparsing
+    from wacfg import optparsing
     from optparse import OptionParser, OptionGroup
 
     parser = optparsing.waopts()

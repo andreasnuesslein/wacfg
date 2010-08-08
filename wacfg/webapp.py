@@ -2,11 +2,11 @@ import os
 import subprocess
 import logging
 
-from WaCfg.config import Config
-from WaCfg.helpers import *
-from WaCfg.vercmp import *
-from WaCfg.output import OUT
-from WaCfg.content import Content
+from .config import Config
+from .helpers import *
+from .vercmp import *
+from .output import OUT
+from .content import Content
 
 class Env:
     pass
@@ -46,7 +46,7 @@ class Application:
             OUT.debug("RUNNING: %s wd(%s)" %(args, wd))
             subprocess.call(args, cwd=wd)
         else:
-            OUT.error("no wacfg.py found")
+            OUT.error("No wacfg.py found")
 
 
 class ApplicationList:
@@ -98,7 +98,7 @@ class ApplicationList:
 
 class InstalledApps:
     def __init__(self):
-        Env.cfg = Config()
+        Env.cfg = Config
         self.dir = Env.cfg.wwwroot
 
     def _list(self):

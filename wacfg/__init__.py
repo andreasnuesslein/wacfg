@@ -73,11 +73,11 @@ class tools:
                 content = Content(Env.destpath)
                 csventries = content.readCSV()
                 manuallychanged = content.setOperation( lambda x,y: y-x )
-
+                manuallychanged = [ file for file in manuallychanged if os.path.exists(file.abspath) ]
                 if manuallychanged:
-                    OUT.info('The following files have been manually changed:')
+                    OUT.info('The following files have been changed manually:')
                     for file in manuallychanged:
-                        OUT.info("\t- %s" % file.path)
+                        OUT.info("\t- %s" % os.path.normpath(file.abspath))
                     OUT.info('\nPlease run:')
                     OUT.info('CONFIG_PROTECT="tmp/installed/localhost/htdocs/wordpress/" etc-update')
 
@@ -95,17 +95,20 @@ class tools:
         # Move files that have custom changes
         if manuallychanged:
             for entry in manuallychanged:
-                relpth = os.path.relpath(entry.path)
-                ep = sboxpath_s % relpth
-                epn = sboxpath_s % "._cfg%s_%s" % ("%04d", relpth)
-                i = 0
-                while True:
-                    epntmp = epn % i
-                    if not os.path.isfile(epntmp):
-                        epn = epntmp
-                        break
-                    i+=1
-                tools.mv(ep, epn)
+                if entry.type != "dir":
+                    relpth = os.path.relpath(entry.path)
+                    ep = sboxpath_s % relpth
+                    epntmp = os.path.join(os.path.split(relpth)[0],
+                            "._cfg%s_%s" % ("%04d", os.path.split(relpth)[1]) )
+                    epn = sboxpath_s % epntmp
+                    i = 0
+                    while True:
+                        epntmp = epn % i
+                        if not os.path.isfile(epntmp):
+                            epn = epntmp
+                            break
+                        i+=1
+                    tools.mv(ep, epn)
 
 
         # do the actual "installation" / move
@@ -253,10 +256,10 @@ def remove():
 
 def purge():
     if not os.path.isfile(os.path.join(Env.destpath, '.wacfg')):
-        OUT("The given path does not contain a wacfg-installation.. aborting", 0)
+        OUT.error("The given path does not contain a wacfg-installation.. aborting")
         sys.exit(1)
     else:
-        OUT("The directory '%s' will be completely deleted with all its contents." % Env.destpath, 0)
+        OUT.warn("The directory '%s' will be completely deleted with all its contents." % Env.destpath)
         x = raw_input("Are you sure? (y/N) ")
         if x in "yYjJ":
             tools.rm(Env.destpath, recursive=True)
@@ -279,7 +282,7 @@ def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None):
     Env.p = os.path.basename(sys.argv[0])[:-3]
     Env.pn, Env.pv, Env.rev = pkgsplit(Env.p)
 
-    Env.cfg = Config()
+    Env.cfg = Config
     Env.vhost = Env.options.vhost or vhost or "localhost"
     Env.installdir = Env.options.installdir or installdir or Env.pn
     Env.server = Env.options.server or server or identify_server()
@@ -312,6 +315,6 @@ def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None):
     except IndexError as e:
         OUT.warn("No command given, doing upgrade")
         upgrade()
-    except Error as e:
-        OUT.error("Couldn't parse your input. Error: %s" % e)
+    #except:
+    #    OUT.error("Couldn't parse your input.")
 

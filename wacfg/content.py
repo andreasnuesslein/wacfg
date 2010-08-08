@@ -9,6 +9,7 @@ except:
     import configparser
 
 
+from .output import OUT
 
 cfile = '.wacfg-%s-%s'
 
@@ -47,7 +48,7 @@ class Content:
     def removeFiles(self):
         self.readCSV()
         entries = self.setOperation( lambda x,y: x & y )
-        for entry in sorted(entries, key=lambda x:x.type, reverse=True):
+        for entry in sorted(entries, key=lambda x:x.path, reverse=True):
             entry.remove()
 
 
@@ -120,7 +121,6 @@ class Entry:
 
         if os.path.islink(path):
             self.type = 'sym'
-            #self.target = os.path.relpath(os.path.realpath(path))
             self.target = os.path.realpath(path)
         elif os.path.isfile(path):
             self.type = 'obj'
@@ -130,6 +130,8 @@ class Entry:
             self.md5 = '0'
         else:
             raise Exception("unknown filetype")
+        self.abspath = os.path.normpath(os.path.join(self.wd, self.path))
+
 
     def _init_by_array(self, array):
         (self.type, self.mod, self.uid, self.gid, self.path, target_or_md5) = array
@@ -137,6 +139,7 @@ class Entry:
             self.target = target_or_md5
         else:
             self.md5 = target_or_md5
+        self.abspath = os.path.normpath(os.path.join(self.wd, self.path))
 
 
     def __repr__(self):
@@ -180,13 +183,11 @@ class Entry:
         return md5.hexdigest()
 
     def remove(self):
-        # XXX This is not yet working perfectly
-        abspath = os.path.join(self.wd, self.path)
         if self.type == 'dir':
             try:
-                os.removedirs(abspath)
+                os.rmdir(self.abspath)
             except:
-                pass
+                OUT.warn("Path not empty: %s" % self.abspath)
         else:
-            os.remove(abspath)
+            os.remove(self.abspath)
 

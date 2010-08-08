@@ -1,5 +1,5 @@
 #!/usr/bin/env python
 
-from WaCfg import install
+from wacfg import main
 
-install(source="http://d10xg45o6p6dbl.cloudfront.net/projects/p/phpbb/phpBB-3.0.7-PL1.tar.bz2")
+main(source="http://d10xg45o6p6dbl.cloudfront.net/projects/p/phpbb/phpBB-3.0.7-PL1.tar.bz2")
