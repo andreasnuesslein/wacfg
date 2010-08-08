@@ -265,7 +265,7 @@ def purge():
             tools.rm(Env.destpath, recursive=True)
 
 
-def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None):
+def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None, wwwroot=None):
 
     # ------------------------------------------------------------------------
     # Optionparser
@@ -286,9 +286,11 @@ def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None):
     Env.vhost = Env.options.vhost or vhost or "localhost"
     Env.installdir = Env.options.installdir or installdir or Env.pn
     Env.server = Env.options.server or server or identify_server()
+    Env.wwwroot = Env.options.wwwroot or wwwroot or "/var/www"
     OUT.debug("Server: %s" % Env.server)
+    OUT.debug("Wwwroot: %s" % Env.wwwroot)
     Env.sboxpath = os.path.join(Env.cfg._sandboxroot, Env.pn)
-    Env.destpath = os.path.join(Env.cfg.wwwroot,
+    Env.destpath = os.path.join(Env.wwwroot,
             Env.vhost, "htdocs", Env.installdir)
 
     if source:
@@ -315,6 +317,4 @@ def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None):
     except IndexError as e:
         OUT.warn("No command given, doing upgrade")
         upgrade()
-    #except:
-    #    OUT.error("Couldn't parse your input.")
 

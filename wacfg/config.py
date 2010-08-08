@@ -7,9 +7,8 @@ except:
 
 class Config:
     # not user-changeable
-    _appdir = "/home/nutz/work/wacfg/apps/"
-    _sandboxroot = "/home/nutz/work/wacfg/tmp/sandbox/"
-    wwwroot = "/home/nutz/work/wacfg/tmp/installed/"
+    _appdir = "/var/lib/webapps/"
+    _sandboxroot = "/var/tmp/webapps//"
     #_dbroot = "/home/nutz/work/wacfg/tmp/vardbwacfg/"
 
 

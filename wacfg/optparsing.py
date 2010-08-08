@@ -23,7 +23,10 @@ def waopts():
             help="Specify another install directory")
 
     group.add_option("-s", "--server", dest="server",
-            default=None, help="Which server to use. Default is <apache>")
+            default=None, help="Which server to use. If multiple are installed, apache will be used")
+
+    group.add_option("-W", "--wwwroot", dest="wwwroot",
+            default="/var/www", help="Specify the wwwroot. Default is '/var/www/'")
 
     parser.add_option_group(group)
 

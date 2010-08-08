@@ -77,7 +77,7 @@ class ApplicationList:
     def list(self):
         OUT.info("AVAILABLE webapps:")
         OUT.info("")
-        if True: # Env.options.verbose:
+        if True: # Env.options.verbose: XXX
             for k, v in self.dict().items():
                 OUT.info("- "+k)
                 for version in v:
@@ -97,9 +97,9 @@ class ApplicationList:
 
 
 class InstalledApps:
-    def __init__(self):
-        Env.cfg = Config
-        self.dir = Env.cfg.wwwroot
+    def __init__(self, Env):
+        self.Env = Env
+        self.dir = Env.options.wwwroot
 
     def _list(self):
         hits = []
