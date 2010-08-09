@@ -8,7 +8,7 @@ def uniq(seq):
     return [x for x in seq if x not in seen and not seen.add(x)]
 
 
-def identify_server():
+def _identify_servers():
     servers = { # program-name, username
             "apache": "apache",
             "nginx": "nginx",
@@ -22,7 +22,11 @@ def identify_server():
     if not len(users):
         OUT.error("No webserver found on your system")
         sys.exit(1)
-    if len(users) > 1:
-        OUT.warn("More than one webserver found on your system. Using %s as user" % users[0])
-    return users[0]
+    return users
+
+def identify_server():
+    servers = _identify_servers()
+    if len(servers) > 1:
+        OUT.warn("More than one webserver found on your system. Using %s as user" % servers[0])
+    return servers[0]
 
