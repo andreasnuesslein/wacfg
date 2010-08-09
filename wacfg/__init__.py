@@ -79,7 +79,7 @@ class tools:
                     for file in manuallychanged:
                         OUT.info("\t- %s" % os.path.normpath(file.abspath))
                     OUT.info('\nPlease run:')
-                    OUT.info('CONFIG_PROTECT="tmp/installed/localhost/htdocs/wordpress/" etc-update')
+                    OUT.info('CONFIG_PROTECT="%s" etc-update' % Env.destpath)
 
             else:
                 # XXX Folder exists, but no .wacfg-files...
