@@ -27,4 +27,5 @@ src_unpack() {
 
 src_install() {
 	distutils_src_install
+	dobin bin/wacfg
 }
