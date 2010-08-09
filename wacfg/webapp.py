@@ -37,6 +37,7 @@ class Application:
 
     def valid_exec(self):
         path = os.path.join(Config._appdir, self.name, self.file)
+        OUT.debug("valid exec path: %s" % path)
         return(os.path.isfile(path))
 
     def install(self, sysargs=[]):
@@ -51,7 +52,9 @@ class Application:
 
 class ApplicationList:
     def __init__(self, app=None):
-        if not app:
+        if not os.path.isdir(Config._appdir):
+            apps = []
+        elif not app:
             apps = [app for app in sorted(os.listdir(Config._appdir)) if
                 os.path.isdir(os.path.join(Config._appdir, app)) ]
         else:
@@ -75,6 +78,9 @@ class ApplicationList:
         return(appdict)
 
     def list(self):
+        if len(self.apps) == 0:
+            OUT.info("No webapps available")
+            return
         OUT.info("AVAILABLE webapps:")
         OUT.info("")
         if True: # Env.options.verbose: XXX
@@ -111,10 +117,13 @@ class InstalledApps:
             content = Content(hit.replace(".wacfg",""))
             metacsv = content.readMetaCSV()
             cv = Application(metacsv['pn'],metacsv['pv'])
-            lv = ApplicationList(metacsv['pn']).latest_version()
-            if cv < lv:
-                content.update = lv.version
-            else:
+            try:
+                lv = ApplicationList(metacsv['pn']).latest_version()
+                if cv < lv:
+                    content.update = lv.version
+                else:
+                    content.update = False
+            except:
                 content.update = False
             result += [content]
         return result
@@ -126,12 +135,13 @@ class InstalledApps:
                 mcsv = app.readMetaCSV()
                 argx = ["upgrade", "-d", mcsv['installdir'], "-H", mcsv['vhost']]
                 Application(mcsv['pn'], app.update).install(argx)
-                #app.install()
-
 
 
     def list(self):
         apps = self._list()
+        if apps == []:
+            OUT.info("No webapps installed")
+            return
         OUT.debug("Found .wacfgs: %s:" % apps)
         OUT.info("INSTALLED webapps:")
         OUT.info("")
