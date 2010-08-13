@@ -1,15 +1,14 @@
 import os
 import subprocess
-import logging
 
-from .config import Config
 from .helpers import *
 from .vercmp import *
 from .output import OUT
 from .content import Content
 
 class Env:
-    pass
+    _appdir = "/var/lib/webapps/"
+
 
 class Application:
     def __init__(self, name, version):
@@ -36,13 +35,13 @@ class Application:
 
 
     def valid_exec(self):
-        path = os.path.join(Config._appdir, self.name, self.file)
+        path = os.path.join(Env._appdir, self.name, self.file)
         OUT.debug("valid exec path: %s" % path)
         return(os.path.isfile(path))
 
     def install(self, sysargs=[]):
         if self.valid_exec():
-            wd = os.path.join(Config._appdir, self.name)
+            wd = os.path.join(Env._appdir, self.name)
             args = [os.path.join(wd, self.file)] + sysargs
             OUT.debug("RUNNING: %s wd(%s)" %(args, wd))
             subprocess.call(args, cwd=wd)
@@ -52,18 +51,18 @@ class Application:
 
 class ApplicationList:
     def __init__(self, app=None):
-        if not os.path.isdir(Config._appdir):
+        if not os.path.isdir(Env._appdir):
             apps = []
         elif not app:
-            apps = [app for app in sorted(os.listdir(Config._appdir)) if
-                os.path.isdir(os.path.join(Config._appdir, app)) ]
+            apps = [app for app in sorted(os.listdir(Env._appdir)) if
+                os.path.isdir(os.path.join(Env._appdir, app)) ]
         else:
             apps = [app]
         self.apps = []
         for app in apps:
-            for files in sorted(os.listdir(os.path.join(Config._appdir, app))):
+            for files in sorted(os.listdir(os.path.join(Env._appdir, app))):
                 if app in files and ".py" in files and \
-                        os.path.isfile(os.path.join(Config._appdir, app, files )):
+                        os.path.isfile(os.path.join(Env._appdir, app, files )):
                     version = pkgsplit( files[:-3] )[1]
                     self.apps += [ Application(app, version ) ]
 
