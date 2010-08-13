@@ -8,7 +8,6 @@ try:
 except:
     import configparser
 
-
 from .output import OUT
 
 cfile = '.wacfg-%s-%s'
@@ -22,7 +21,7 @@ class Content:
 
         olddir = os.getcwd()
         os.chdir(path)
-        self.createEntries()
+        self._createEntries()
         os.chdir(olddir)
 
     def __repr__(self):
@@ -32,30 +31,31 @@ class Content:
         except:
             return"Webapp @ %s" % (self.path)
 
-    def createEntries(self, path='.'):
+    def _createEntries(self, path='.'):
             for entry in os.listdir(path):
                 x = os.path.join(path, entry)
                 if os.path.isdir(x):
-                    self.createEntries(x)
+                    self._createEntries(x)
                 if not "./.wacfg" in x:
                     self.entries.add(Entry(wd=os.path.abspath(path),path=x))
 
-    def setOperation(self, operation):
+    def doSetOperation(self, operation):
         if not self.csventries:
             return self.entries
         return( operation(self.entries, self.csventries) )
 
     def removeFiles(self):
         self.readCSV()
-        entries = self.setOperation( lambda x,y: x & y )
+        entries = self.doSetOperation( lambda x,y: x & y )
         for entry in sorted(entries, key=lambda x:x.path, reverse=True):
             entry.remove()
 
 
-    def writeCSV(self, pn=None, pv=None):
-        pn = pn or self.pn
-        pv = pv or self.pv
-        file = os.path.join(self.path, cfile % (pn, pv))
+    def writeCSV(self, Env=None):
+        if Env:
+            self.pn = Env.pn
+            self.pv = Env.pv
+        file = os.path.join(self.path, cfile % (self.pn, self.pv))
         f = open(file, 'w')
         w = csv.writer(f, delimiter=' ', quotechar='"')
         for entry in self.entries:
