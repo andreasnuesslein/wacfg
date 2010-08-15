@@ -1,8 +1,10 @@
 import os, sys
+
 from .output import *
 from .vercmp import pkgsplit
 from .helpers import identify_server
 from .tools import Tools
+from .webapp import ApplicationVersion
 
 
 VERSION = (0, 1, 0, 'final', 0)

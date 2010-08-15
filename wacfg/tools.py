@@ -1,6 +1,7 @@
 import os, sys
 import tarfile, zipfile
 import subprocess
+import shutil
 
 from . import optparsing
 from .output import OUT
@@ -14,6 +15,13 @@ class Tools:
     def mv(self, frompath, topath, wd="."):
         args = ["/bin/mv", frompath, topath]
         return subprocess.call(args, cwd=wd)
+
+    def cp(self, frompath, topath, wd="."):
+        olddir = os.getcwd()
+        os.chdir(wd)
+        shutil.copy(frompath, topath)
+        os.chdir(olddir)
+        return
 
     def rm(self, rmpath, wd=".", recursive=False):
         # XXX shutil.rmtree() and regular os.remove() can be used here. replace this.
