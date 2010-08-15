@@ -50,6 +50,13 @@ class Content:
         for entry in sorted(entries, key=lambda x:x.path, reverse=True):
             entry.remove()
 
+        rest = os.listdir(self.path)
+        for file in os.listdir(self.path):
+            if '.wacfg' == file[:6]:
+                os.remove(os.path.join(self.path,file))
+        if not os.listdir(self.path):
+            os.rmdir(self.path)
+
 
     def writeCSV(self, Env=None):
         if Env:

@@ -148,7 +148,7 @@ class Tools:
                 old_app = ApplicationVersion(path = self.Env.destpath)
                 app.upgrade(old_app.cur_content)
 
-            else:
+            elif os.listdir(self.Env.destpath):
                 # XXX Folder exists, but no .wacfg-files...
                 OUT.error("Either you installed this manually before or some \
                         goofball erased the .wacfg-files.\nEither way, I'm exiting")
