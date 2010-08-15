@@ -11,34 +11,36 @@ class Tools:
     def __init__(self, Env):
         self.Env = Env
 
+    def _cwd(self, wd=""):
+        return os.path.normpath(os.path.join(self.Env.sboxpath,wd))
 
-    def mv(self, frompath, topath, wd="."):
+    def mv(self, frompath, topath, wd=""):
         args = ["/bin/mv", frompath, topath]
-        return subprocess.call(args, cwd=wd)
+        return subprocess.call(args, cwd=self._cwd(wd))
 
-    def cp(self, frompath, topath, wd="."):
+    def cp(self, frompath, topath, wd=""):
         olddir = os.getcwd()
-        os.chdir(wd)
+        os.chdir(self._cwd(wd))
         shutil.copy(frompath, topath)
         os.chdir(olddir)
         return
 
-    def rm(self, rmpath, wd=".", recursive=False):
+    def rm(self, rmpath, wd="", recursive=False):
         # XXX shutil.rmtree() and regular os.remove() can be used here. replace this.
         args = ["/bin/rm"]
         if recursive:
             args += ["--recursive", "--force"]
         args += [rmpath]
-        return subprocess.call(args, cwd=wd)
+        return subprocess.call(args, cwd=self._cwd(wd))
 
 
-    def rsync(self, frompath, topath, wd="."):
+    def rsync(self, frompath, topath, wd=""):
         if not "/" == frompath[-1:]:
             frompath += "/"
         if not "/" == topath[-1:]:
             topath += "/"
         args = ["/usr/bin/rsync", "-a", frompath, topath]
-        return subprocess.call(args, cwd=wd)
+        return subprocess.call(args, cwd=self._cwd(wd))
 
     def wget(self, path):
         try:
@@ -64,15 +66,15 @@ class Tools:
 
 
     def chmod(self, mode, path="", recursive=False):
-        path = os.path.join(self.Env.sboxpath, path)
+        path = self._cwd(path)
         args = ["/bin/chmod"]
         if recursive:
             args += ["-R"]
         args += [mode, path]
         return subprocess.call(args)
 
-    def chown(self, owner, group=None, path=".", recursive=False):
-        path = os.path.join(self.Env.sboxpath, path)
+    def chown(self, owner, group=None, path="", recursive=False):
+        path = self._cwd(path)
         args = ["/bin/chown", "--silent"]
         if recursive:
             args += ["--recursive"]
@@ -86,7 +88,7 @@ class Tools:
             OUT.warn("chown exited abnormally.")
         return
 
-    def server_own(self, path=".", recursive=False):
+    def server_own(self, path="", recursive=False):
         return self.chown(self.Env.server, self.Env.server, path, recursive)
 
 
@@ -115,29 +117,28 @@ class Tools:
             sys.exit(1)
 
         try:
-            self.rm(self.Env.sboxpath, recursive=True)
-            os.mkdir(self.Env.sboxpath)
+            self.rm(self._cwd(), recursive=True)
         except:
             pass
-        source.extractall(path = self.Env.sboxpath)
+        os.makedirs(self._cwd())
+        source.extractall(path = self._cwd())
 
         #----------------------------------------------------------
         # Check whether we extracted a folder into a folder...
-        dir = os.listdir(self.Env.sboxpath)
+        dir = os.listdir(self._cwd())
         if len(dir) == 0:
             OUT.error("No files in sandbox, something went wrong")
             sys.exit(1)
         if len(dir) == 1:
-            wd = os.path.dirname(self.Env.sboxpath)
             tmpdir = "._unzip%s" % (self.Env.pn)
-            self.mv(os.path.join(self.Env.sboxpath,dir[0]), tmpdir, wd)
-            self.rm(self.Env.sboxpath, recursive=True)
-            self.mv(tmpdir, self.Env.sboxpath, wd)
+            self.mv(self._cwd(dir[0]), tmpdir, self._cwd(".."))
+            self.rm(self._cwd(), recursive=True)
+            self.mv(tmpdir, self._cwd(), self._cwd(".."))
         return
 
     def archive_install(self):
 
-        app = ApplicationVersion(self.Env.pn, self.Env.pv, self.Env.sboxpath)
+        app = ApplicationVersion(self.Env.pn, self.Env.pv, self._cwd())
         app.cur_content.writeCSV(self.Env)
         app.cur_content.writeMetaCSV(self.Env)
 
