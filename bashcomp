@@ -1,0 +1,44 @@
+# -*- mode: sh; indent-tabs-mode: nil; -*-  vim: set ft=sh tw=80 sw=4 et :
+# Copyright 1999-2010 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+# $Id: $
+
+# bash command-line completion for wacfg
+# Author: Andreas Nüßlein <nutz@noova.de>
+# Author: Aaron Walker <ka0ttic@gentoo.org>
+
+_wacfg() {
+    local cur possibles
+    local options="--vhost --dir --server --wwwroot"
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+
+    set - "${COMP_WORDS[@]:1}"
+    # skip global options
+    while [[ $# -gt 1 && $1 == -* ]]; do
+        shift
+    done
+    # skip any subaction options
+    while [[ $# -gt 3 && $3 == -* ]]; do
+        set - "${@:1:2}" "${@:4}"
+    done
+
+    case $# in
+        1) possibles="${options} install upgrade remove purge"
+            ;;
+        2) possibles="${options} $(/bin/ls /var/lib/webapps/)"
+            ;;
+        3)
+           possibles="$(/bin/ls /var/lib/webapps/$2/ | grep $2 |
+             sed -n -e 's/'$2'-\(.*\)\.py/\1/p')"
+            ;;
+        4) possibles="${options}"
+    esac
+
+    [[ -n "${possibles}" ]] && \
+        COMPREPLY=( $(compgen -W "${possibles}" -- ${cur}) )
+
+    return 0
+}
+
+complete -F _wacfg wacfg
