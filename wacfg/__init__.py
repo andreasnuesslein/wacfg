@@ -22,6 +22,7 @@ tools = Tools(Env)
 
 
 class WaCfg:
+    Env = Env
 
     def _src_unpack(self):
         tools.archive_unpack()

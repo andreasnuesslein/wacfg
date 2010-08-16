@@ -12,6 +12,7 @@ class Tools:
         self.Env = Env
 
     def _cwd(self, wd=""):
+        wd = wd[1:] if wd[0] == "/" else wd
         return os.path.normpath(os.path.join(self.Env.sboxpath,wd))
 
     def mv(self, frompath, topath, wd=""):
