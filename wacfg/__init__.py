@@ -93,14 +93,13 @@ def main(Handler=WaCfg, source=None, vhost=None, installdir=None, server=None, w
     Env.p = os.path.basename(sys.argv[0])[:-3]
     Env.pn, Env.pv, Env.rev = pkgsplit(Env.p)
 
-    Env.sboxroot = "/var/tmp/webapps/"
+    Env.sboxpath = os.path.join("/var/tmp/webapps/", Env.pn)
     Env.vhost = Env.options.vhost or vhost or "localhost"
     Env.installdir = Env.options.installdir or installdir or Env.pn
     Env.server = Env.options.server or server or identify_server()
     Env.wwwroot = Env.options.wwwroot or wwwroot or "/var/www"
     OUT.debug("Server: %s" % Env.server)
     OUT.debug("Wwwroot: %s" % Env.wwwroot)
-    Env.sboxpath = os.path.join(Env.sboxroot, Env.pn)
     Env.destpath = os.path.join(Env.wwwroot,
             Env.vhost, "htdocs", Env.installdir)
 
