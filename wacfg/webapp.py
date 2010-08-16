@@ -42,7 +42,7 @@ class ApplicationVersion:
             raise Exception()
 
         self.wacfgfile = os.path.join(Env.appdir,
-                self.name, "%s-%s.py" % (self.name, self.version))
+                self.name, "%s-%s.wa" % (self.name, self.version))
 
     def _init_by_nv(self, name, version):
         self.name = name
@@ -148,7 +148,7 @@ class Application:
 
     def get_versions(self):
         for file in os.listdir(self.src_dir):
-            if self.name in file and ".py" in file and \
+            if self.name in file and ".wa" in file and \
                     os.path.isfile(os.path.join(self.src_dir, file )):
                         version = pkgsplit( file[:-3] )[1]
                         self.versions += [ ApplicationVersion(self.name, version ) ]

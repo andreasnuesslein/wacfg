@@ -42,3 +42,4 @@ _wacfg() {
 }
 
 complete -F _wacfg wacfg
+complete -F _wacfg *.wa
